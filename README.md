@@ -18,8 +18,14 @@ Analysis of data
     pip3 install -r requirements.txt
     ```
 
-4. Launch Jupyter Notebook
+4. Launch Jupyter Notebook OR run filtering script
     ```bash
     python3 -m jupyterlab
+    ```
+
+    OR
+
+    ```bash
+    python3 -m scripts.filterConsent
     ```
     
