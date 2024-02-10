@@ -33,10 +33,18 @@ def filter_data_by_consent(data_file, consent_file, output_file_path):
         reader = csv.DictReader(inp)
         writer = csv.DictWriter(out, ["legal_first_name", "legal_last_name"] + reader.fieldnames)
         writer.writeheader()
+
+        id_field = ""
+        id_array = ["actor", "user", "user_id"]
+        for id in id_array:
+            if id in reader.fieldnames:
+                id_field = id
+                break
+
         for row in reader:
-            if row["actor"] in consent_hashmap:
-                row["legal_first_name"] = consent_hashmap[row["actor"]][0] if consent_hashmap[row["actor"]][0] else "anonymous"
-                row["legal_last_name"] = consent_hashmap[row["actor"]][1] if consent_hashmap[row["actor"]][1] else "anonymous"
+            if id_field in row and row[id_field] in consent_hashmap:
+                row["legal_first_name"] = consent_hashmap[row[id_field]][0] if consent_hashmap[row[id_field]][0] else "anonymous"
+                row["legal_last_name"] = consent_hashmap[row[id_field]][1] if consent_hashmap[row[id_field]][1] else "anonymous"
                 writer.writerow(row)
                 
 if __name__ == "__main__":
