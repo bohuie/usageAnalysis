@@ -7,8 +7,11 @@ ipython_config.py
 
 # data
 *.csv
+*.json
 
 # venv
 /venv
+
+.env
 
 .DS_Store
