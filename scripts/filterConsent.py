@@ -44,17 +44,25 @@ def filter_data_by_consent(data_file, consent_file, output_file_path):
         total_rows = 0
         consented_rows = 0
         omitted_rows = 0
+        unique_consented_users = set()
+        unique_omitted_users = set()
+
         for row in reader:
             total_rows += 1
             if id_field in row and row[id_field] in consent_hashmap:
                 consented_rows += 1
+                unique_consented_users.add(row[id_field])
                 writer.writerow(row)
             else:
                 omitted_rows += 1
+                unique_omitted_users.add(row[id_field])
 
         print(f"Total rows: {total_rows}")
         print(f"Consented rows: {consented_rows}")
         print(f"Omitted rows: {omitted_rows}")
+        print(f"Total users: {len(unique_consented_users) + len(unique_omitted_users)}")
+        print(f"Total consented users: {len(unique_consented_users)}")
+        print(f"Total omitted users: {len(unique_omitted_users)}")
                 
 if __name__ == "__main__":
     filter_data_by_consent_script()
