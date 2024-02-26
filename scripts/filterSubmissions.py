@@ -85,7 +85,7 @@ def get_submission_details_field(submission_details: dict, field_path: list):
 def get_gamification_secrets():
     load_dotenv()
     try:
-        gamification_submission_url = os.getenv("GET_SUBMISSION_URL")
+        gamification_submission_url = os.environ.get("GAMIFICATION_SUBMISSION_URL")
         gamification_token = os.environ.get("GAMIFICATION_TOKEN")
     except Exception as e:
         raise Exception("Environment variables not set")
