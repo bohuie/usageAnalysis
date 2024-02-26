@@ -24,20 +24,37 @@ def filter_data_by_consent_script():
 def filter_data_by_consent(data_file, consent_file, output_file_path):
     with open(data_file, 'r') as inp, open(consent_file, 'r') as consent, open(output_file_path, 'w') as out:
         consent_reader = csv.DictReader(consent)
-        consent_hashmap = {}
+        consent_hashmap = []
         for row in consent_reader:
             if row["consent"] == 'True':
-                consent_hashmap[row["user"]] = [row["legal_first_name"], row["legal_last_name"]]
+                consent_hashmap.append(row["user"])
             if row["consent"] == 'False' and row["user"] in consent_hashmap:
-                del consent_hashmap[row["user"]]
+                consent_hashmap.remove(row["user"])
         reader = csv.DictReader(inp)
-        writer = csv.DictWriter(out, ["legal_first_name", "legal_last_name"] + reader.fieldnames)
+        writer = csv.DictWriter(out, reader.fieldnames)
         writer.writeheader()
+
+        id_field = ""
+        id_array = ["actor", "user", "user_id"]
+        for id in id_array:
+            if id in reader.fieldnames:
+                id_field = id
+                break
+
+        total_rows = 0
+        consented_rows = 0
+        omitted_rows = 0
         for row in reader:
-            if row["actor"] in consent_hashmap:
-                row["legal_first_name"] = consent_hashmap[row["actor"]][0] if consent_hashmap[row["actor"]][0] else "anonymous"
-                row["legal_last_name"] = consent_hashmap[row["actor"]][1] if consent_hashmap[row["actor"]][1] else "anonymous"
+            total_rows += 1
+            if id_field in row and row[id_field] in consent_hashmap:
+                consented_rows += 1
                 writer.writerow(row)
+            else:
+                omitted_rows += 1
+
+        print(f"Total rows: {total_rows}")
+        print(f"Consented rows: {consented_rows}")
+        print(f"Omitted rows: {omitted_rows}")
                 
 if __name__ == "__main__":
     filter_data_by_consent_script()
