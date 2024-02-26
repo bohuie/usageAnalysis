@@ -8,11 +8,14 @@ ipython_config.py
 # data
 *.json
 *.csv
+*.json
 
 # venv
 /venv
 
+
 #env
+
 .env
 
 .DS_Store
