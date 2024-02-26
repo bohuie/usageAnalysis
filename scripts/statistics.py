@@ -59,6 +59,7 @@ def userPerformance_script():
                     if test["name"] not in junits:
                         junits[test["name"]] = {
                             "junit_name": test["name"],
+                            "question_ids": set(),
                             "question_type": set(),
                             "question_category": set(),
                             "total_submissions": 0,
@@ -67,6 +68,7 @@ def userPerformance_script():
                         }
 
                     junits[test["name"]]["total_submissions"] += 1
+                    junits[test["name"]]["question_ids"].add(row["question.id"])
                     junits[test["name"]]["question_type"].add(row["question.type_name"])
                     junits[test["name"]]["question_category"].add(row["question.category_name"])
                     junits[test["name"]]["passed_submissions"] += 1
@@ -75,14 +77,15 @@ def userPerformance_script():
                     if test["name"] not in junits:
                         junits[test["name"]] = {
                             "junit_name": test["name"],
+                            "question_ids": set(),
                             "question_type": set(),
                             "question_category": set(),
                             "total_submissions": 0,
                             "passed_submissions": 0,
                             "failed_submissions": 0,
                         }
-
                     junits[test["name"]]["total_submissions"] += 1
+                    junits[test["name"]]["question_ids"].add(row["question.id"])
                     junits[test["name"]]["question_type"].add(row["question.type_name"])
                     junits[test["name"]]["question_category"].add(row["question.category_name"])
                     junits[test["name"]]["failed_submissions"] += 1
