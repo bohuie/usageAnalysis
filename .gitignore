@@ -6,9 +6,13 @@ profile_default/
 ipython_config.py
 
 # data
+*.json
 *.csv
 
 # venv
 /venv
+
+#env
+.env
 
 .DS_Store
