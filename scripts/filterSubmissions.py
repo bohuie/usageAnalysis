@@ -26,8 +26,9 @@ def filter_submissions(data_file, output_file_path):
         concept_column_names = ["question.type_name", "question.parent_category_name", "question.category_name"]
         question_column_names = ["question.id"]
         tests_column_names = ["get_passed_test_results", "get_failed_test_results"]
+        attempts_column_name = ["nth_attempt"]
         
-        column_names = submission_column_names + concept_column_names + question_column_names + tests_column_names
+        column_names = submission_column_names + concept_column_names + question_column_names + tests_column_names + attempts_column_name
 
         reader = csv.DictReader(inp)
         writer = csv.DictWriter(out, column_names)
