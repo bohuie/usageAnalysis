@@ -21,14 +21,14 @@ def filter_submissions_script():
     filter_submissions(actions_file_path, output_file_path)
 
 def filter_submissions(data_file, output_file_path):
-    with open(data_file, 'r') as inp, open(output_file_path, 'w') as out:
+    with open(data_file, 'r', encoding='utf-8-sig') as inp, open(output_file_path, 'w') as out:
         submission_column_names = ["actor", "data.grade", "data.status", "object_id", "time_created"]
         concept_column_names = ["question.type_name", "question.parent_category_name", "question.category_name"]
         question_column_names = ["question.id"]
         tests_column_names = ["get_passed_test_results", "get_failed_test_results"]
         attempts_column_name = ["nth_attempt"]
         
-        column_names = submission_column_names + concept_column_names + question_column_names + tests_column_names + attempts_column_name
+        column_names = question_column_names + submission_column_names + concept_column_names + tests_column_names + attempts_column_name
 
         reader = csv.DictReader(inp)
         writer = csv.DictWriter(out, column_names)
@@ -61,8 +61,8 @@ def filter_submissions(data_file, output_file_path):
 
                 rows_to_sort.append(row)
 
-        sorted_rows = sorted(rows_to_sort, key=lambda x: datetime.fromisoformat(x['time_created']))
-       
+        sorted_rows = sorted(rows_to_sort, key=lambda x: ( x["question.id"],x["actor"],datetime.fromisoformat(x["time_created"])))
+    
         for row in sorted_rows:
             writer.writerow(row)
 
