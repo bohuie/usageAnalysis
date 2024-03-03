@@ -1,5 +1,6 @@
 import csv
 import sys
+from datetime import datetime
 from pathlib import Path
 import requests
 from dotenv import load_dotenv
@@ -8,7 +9,7 @@ import os
 csv.field_size_limit(sys.maxsize)
 
 def filter_submissions_script():
-    print("Enter the absolute path of your actions csv file: ", end="")
+    print("Enter the absolute path of your filtered consent csv file: ", end="")
     actions_file_path = Path(input())
     if not actions_file_path.exists():
         raise Exception("Invalid path")
@@ -20,26 +21,23 @@ def filter_submissions_script():
     filter_submissions(actions_file_path, output_file_path)
 
 def filter_submissions(data_file, output_file_path):
-    with open(data_file, 'r') as inp, open(output_file_path, 'w') as out:
-        submission_column_names = ["actor", "data.answer", "data.grade", "data.is_correct", "data.is_partially_correct", "data.status", "description", "object_id", "object_type", "time_created", "time_modified", "token_change", "verb"]
-        concept_column_names = ["question.type_name", "question.category", "question.parent_category_name", "question.category_name"]
-        question_column_names = ["question.id", "question.text", "question.difficulty"]
+    with open(data_file, 'r', encoding='utf-8-sig') as inp, open(output_file_path, 'w') as out:
+        submission_column_names = ["actor", "data.grade", "data.status", "object_id", "time_created"]
+        concept_column_names = ["question.type_name", "question.parent_category_name", "question.category_name"]
+        question_column_names = ["question.id"]
         tests_column_names = ["get_passed_test_results", "get_failed_test_results"]
+        attempts_column_name = ["nth_attempt"]
         
-        column_names = submission_column_names + concept_column_names + question_column_names + tests_column_names
+        column_names = question_column_names + submission_column_names + concept_column_names + tests_column_names + attempts_column_name
 
         reader = csv.DictReader(inp)
         writer = csv.DictWriter(out, column_names)
         writer.writeheader()
 
         gamification_submission_url, gamification_token = get_gamification_secrets()
-        
-        total_rows = 0
-        submission_rows = 0
-        omitted_rows = 0
 
+        rows_to_sort = []
         for row in reader:
-            total_rows += 1
             if row['object_type'] == 'Submission' and row['description'] == 'Submission was evaluated':
                 
                 # remove unwanted columns
@@ -47,31 +45,26 @@ def filter_submissions(data_file, output_file_path):
                     if key not in column_names:
                         del row[key]
 
-                submission_rows += 1
                 submission_details = get_submissions_details_from_id(gamification_submission_url=gamification_submission_url, gamification_token=gamification_token, submission_id=int(row['object_id']))
 
                 # concept/category fields
                 row["question.type_name"] = get_submission_details_field(submission_details, ["question", "type_name"])
-                row["question.category"] = get_submission_details_field(submission_details, ["question", "category"])
                 row["question.parent_category_name"] = get_submission_details_field(submission_details, ["question", "parent_category_name"])
                 row["question.category_name"] = get_submission_details_field(submission_details, ["question", "category_name"])
 
                 # question fields
                 row["question.id"] = get_submission_details_field(submission_details, ["question", "id"])
-                row["question.text"] = get_submission_details_field(submission_details, ["question", "text"])
-                row["question.difficulty"] = get_submission_details_field(submission_details, ["question", "difficulty"])
 
                 # tests fields
                 row["get_passed_test_results"] = get_submission_details_field(submission_details, ["get_passed_test_results"])
                 row["get_failed_test_results"] = get_submission_details_field(submission_details, ["get_failed_test_results"])
 
-                writer.writerow(row)
-            else:
-                omitted_rows += 1
+                rows_to_sort.append(row)
 
-        print(f"Total rows: {total_rows}")
-        print(f"Submission rows: {submission_rows}")
-        print(f"Omitted rows: {omitted_rows}")
+        sorted_rows = sorted(rows_to_sort, key=lambda x: ( x["question.id"],x["actor"],datetime.fromisoformat(x["time_created"])))
+    
+        for row in sorted_rows:
+            writer.writerow(row)
 
 def get_submission_details_field(submission_details: dict, field_path: list):
     try:
