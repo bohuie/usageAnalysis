@@ -18,9 +18,10 @@ def track_attempts_script():
 
 
 def track_attempts(data_file, output_file_path):
-    with open(data_file, 'r') as inp, open(output_file_path, 'w') as out:
+    with open(data_file, 'r', encoding='latin1') as inp, open(output_file_path, 'w') as out:
         reader = csv.DictReader(inp)
         writer = csv.DictWriter(out, reader.fieldnames)
+        writer.writeheader()
         question = {}
 
         for row in reader:
@@ -42,6 +43,7 @@ def track_attempts(data_file, output_file_path):
             
             # Write the row to the output CSV file
             writer.writerow(row)
+
 
 
 if __name__ == "__main__":
