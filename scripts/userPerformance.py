@@ -1,5 +1,4 @@
 import csv
-import itertools
 import sys
 from pathlib import Path
 
@@ -15,10 +14,6 @@ def userPerformance_script():
         reader = csv.DictReader(inp)
         user = {}
         for row in reader:
-            filter_row = {}
-            for key, value in row.items():
-                if value != "":
-                    filter_row[key] = value
             if row ['object_type'] == "Submission":
                 if row['actor'] not in user:
                     user[row['actor']] = {"total_submissions": 1, "correct": 0, "partially_correct": 0, "incorrect": 0, "score": 0, "avg_score": 0}
