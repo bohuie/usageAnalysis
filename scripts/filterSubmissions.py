@@ -22,13 +22,12 @@ def filter_submissions_script():
 
 def filter_submissions(data_file, output_file_path):
     with open(data_file, 'r', encoding='utf-8-sig') as inp, open(output_file_path, 'w') as out:
-        submission_column_names = ["actor", "data.grade", "data.status", "object_id", "time_created"]
+        submission_column_names = ["actor", "data.status", "object_id", "time_created"]
         concept_column_names = ["question.type_name", "question.parent_category_name", "question.category_name"]
-        question_column_names = ["question.id"]
+        question_column_names = ["question.id", "question.difficulty"]
         tests_column_names = ["get_passed_test_results", "get_failed_test_results"]
-        attempts_column_name = ["nth_attempt"]
         
-        column_names = question_column_names + submission_column_names + concept_column_names + tests_column_names + attempts_column_name
+        column_names = question_column_names + submission_column_names + concept_column_names + tests_column_names
 
         reader = csv.DictReader(inp)
         writer = csv.DictWriter(out, column_names)
@@ -54,6 +53,7 @@ def filter_submissions(data_file, output_file_path):
 
                 # question fields
                 row["question.id"] = get_submission_details_field(submission_details, ["question", "id"])
+                row["question.difficulty"] = get_submission_details_field(submission_details, ["question", "difficulty"])
 
                 # tests fields
                 row["get_passed_test_results"] = get_submission_details_field(submission_details, ["get_passed_test_results"])
