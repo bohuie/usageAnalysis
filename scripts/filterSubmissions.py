@@ -56,8 +56,10 @@ def filter_submissions(data_file, output_file_path):
                 row["question.difficulty"] = get_submission_details_field(submission_details, ["question", "difficulty"])
 
                 # tests fields
-                row["get_passed_test_results"] = get_submission_details_field(submission_details, ["get_passed_test_results"])
-                row["get_failed_test_results"] = get_submission_details_field(submission_details, ["get_failed_test_results"])
+                passed_test = get_submission_details_field(submission_details, ["get_passed_test_results"])
+                failed_test = get_submission_details_field(submission_details, ["get_failed_test_results"])
+                row["get_passed_test_results"] = len(passed_test)
+                row["get_failed_test_results"] = len(failed_test)
 
                 rows_to_sort.append(row)
 
