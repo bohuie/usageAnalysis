@@ -25,7 +25,7 @@ def filter_submissions(data_file, output_file_path):
         submission_column_names = ["actor", "data.status", "object_id", "time_created"]
         concept_column_names = ["question.type_name", "question.parent_category_name", "question.category_name"]
         question_column_names = ["question.id", "question.difficulty"]
-        tests_column_names = ["get_passed_test_results", "get_failed_test_results"]
+        tests_column_names = ["get_passed_test_results", "get_failed_test_results", "num_passed_tests", "num_failed_tests"]
         
         column_names = question_column_names + submission_column_names + concept_column_names + tests_column_names
 
@@ -58,8 +58,10 @@ def filter_submissions(data_file, output_file_path):
                 # tests fields
                 passed_test = get_submission_details_field(submission_details, ["get_passed_test_results"])
                 failed_test = get_submission_details_field(submission_details, ["get_failed_test_results"])
-                row["get_passed_test_results"] = len(passed_test)
-                row["get_failed_test_results"] = len(failed_test)
+                row["get_passed_test_results"] = passed_test
+                row["get_failed_test_results"] = failed_test
+                row["num_passed_tests"] = len(passed_test)
+                row["num_failed_tests"] = len(failed_test)
 
                 rows_to_sort.append(row)
 
