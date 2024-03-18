@@ -10,23 +10,34 @@ def filter_data_by_consent_script():
     if not actions_file_path.exists():
         raise Exception("Invalid path")
 
-    print("Enter absolute path of your consent csv file: ", end="")
+    print("Enter the absolute path of your consent csv file: ", end="")
     consent_file_path = Path(input())
     if not consent_file_path.exists():
+        raise Exception("Invalid path")
+
+    print("Enter the absolute path of your teachers csv file: ", end="")
+    teachers_file_path = Path(input())
+    if not teachers_file_path.exists():
         raise Exception("Invalid path")
     
     output_filename = Path(Path(actions_file_path.name).stem + "_filtered.csv")
     project_root_file_path = Path(__file__).parent.parent
     output_file_path = project_root_file_path / "data" / output_filename
     
-    filter_data_by_consent(actions_file_path, consent_file_path, output_file_path)
+    filter_data_by_consent(actions_file_path, consent_file_path, teachers_file_path, output_file_path)
 
-def filter_data_by_consent(data_file, consent_file, output_file_path):
-    with open(data_file, 'r') as inp, open(consent_file, 'r') as consent, open(output_file_path, 'w') as out:
+def filter_data_by_consent(data_file, consent_file, teachers_file, output_file_path):
+    with open(data_file, 'r') as inp, open(consent_file, 'r') as consent, open(teachers_file, 'r') as teachers, open(output_file_path, 'w') as out:
         consent_reader = csv.DictReader(consent)
+        teachers_reader = csv.DictReader(teachers)
         consent_hashmap = []
+        all_teachers = set()
+
+        for row in teachers_reader:
+            all_teachers.add(row["last_name"])
+
         for row in consent_reader:
-            if row["consent"] == 'True':
+            if row["legal_last_name"] not in all_teachers and row["consent"] == 'True':
                 consent_hashmap.append(row["user"])
             if row["consent"] == 'False' and row["user"] in consent_hashmap:
                 consent_hashmap.remove(row["user"])
@@ -58,10 +69,10 @@ def filter_data_by_consent(data_file, consent_file, output_file_path):
                 unique_omitted_users.add(row[id_field])
 
         print(f"Total rows: {total_rows}")
-        print(f"Consented rows: {consented_rows}")
+        print(f"Consented and non-admin rows: {consented_rows}")
         print(f"Omitted rows: {omitted_rows}")
         print(f"Total users: {len(unique_consented_users) + len(unique_omitted_users)}")
-        print(f"Total consented users: {len(unique_consented_users)}")
+        print(f"Total consented students: {len(unique_consented_users)}")
         print(f"Total omitted users: {len(unique_omitted_users)}")
                 
 if __name__ == "__main__":
