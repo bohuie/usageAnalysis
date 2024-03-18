@@ -13,14 +13,14 @@ Analysis of data
     python3 -m venv venv
     ```
 
-3. Install the required packages
-    ```bash
-    pip3 install -r requirements.txt
-    ```
-
-4. Activate python virtual environment
+3. Activate python virtual environment
     ```bash
     source venv/bin/activate
+    ```
+
+4. Install the required packages
+    ```bash
+    pip3 install -r requirements.txt
     ```
 
 5. Launch Jupyter Notebook OR run filtering script
@@ -31,7 +31,7 @@ Analysis of data
     OR
 
     ```bash
-    python3 -m scripts.<script_name_without_.py>
+    python3 -m src.scripts.<script_name_without_.py>
     ```
 
 ## filterSubmissions.py
@@ -50,5 +50,5 @@ Analysis of data
 
 7. Run filterSubmissions.py file one your filtered actions csv by consent
     ```bash
-        python3 -m scripts.filterSubmissions
+        python3 -m src.scripts.filter_submissions
     ```

@@ -2,14 +2,12 @@ import csv
 from ast import literal_eval
 import sys
 from pathlib import Path
+from src.util.filepath_helpers import get_user_filepath_input
 
 csv.field_size_limit(sys.maxsize)
 
 def userPerformance_script():
-    print("Enter the absolute path of your filtered submissions csv file: ", end="")
-    filtered_submissions_file_path = Path(input())
-    if not filtered_submissions_file_path.exists():
-        raise Exception("Invalid path")
+    filtered_submissions_file_path = get_user_filepath_input
 
     with open(filtered_submissions_file_path, 'r') as inp:
         reader = csv.DictReader(inp)

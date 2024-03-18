@@ -1,14 +1,11 @@
 import csv
 import sys
-from pathlib import Path
+from src.util.filepath_helpers import get_user_filepath_input, get_output_file_path
 
 csv.field_size_limit(sys.maxsize)
 
 def userPerformance_script():
-    print("Enter the absolute path of your filtered submissions csv file: ", end="")
-    filtered_submissions_file_path = Path(input())
-    if not filtered_submissions_file_path.exists():
-        raise Exception("Invalid path")
+    filtered_submissions_file_path = get_user_filepath_input()
 
     with open(filtered_submissions_file_path, 'r') as inp:
         reader = csv.DictReader(inp)
@@ -33,8 +30,7 @@ def userPerformance_script():
         userPerformance_file(user, "userPerformance.csv")
 
 def userPerformance_file(user, output_file_name):
-    project_root_file_path = Path(__file__).parent.parent
-    output_file_path = project_root_file_path / "data" / output_file_name
+    output_file_path = get_output_file_path(output_file_name)
     with open(output_file_path, 'w') as out:
         w = csv.DictWriter( out, ["user_id", "total_submissions", "correct", "partially_correct", "incorrect", "score", "avg_score"] )
         w.writeheader()
