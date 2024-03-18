@@ -33,7 +33,7 @@ def filter_submissions(data_file, output_file_path):
         writer = csv.DictWriter(out, column_names)
         writer.writeheader()
 
-        gamification_submission_url, gamification_token = get_gamification_secrets()
+        gamification_api_url, gamification_token = get_gamification_secrets()
 
         rows_to_sort = []
         for row in reader:
@@ -44,7 +44,7 @@ def filter_submissions(data_file, output_file_path):
                     if key not in column_names:
                         del row[key]
 
-                submission_details = get_submissions_details_from_id(gamification_submission_url=gamification_submission_url, gamification_token=gamification_token, submission_id=int(row['object_id']))
+                submission_details = get_submissions_details_from_id(gamification_api_url=gamification_api_url, gamification_token=gamification_token, submission_id=int(row['object_id']))
 
                 # concept/category fields
                 row["question.type_name"] = get_submission_details_field(submission_details, ["question", "type_name"])
@@ -82,16 +82,16 @@ def get_submission_details_field(submission_details: dict, field_path: list):
 def get_gamification_secrets():
     load_dotenv()
     try:
-        gamification_submission_url = os.environ.get("GAMIFICATION_SUBMISSION_URL")
+        gamification_api_url = os.environ.get("GAMIFICATION_API_URL")
         gamification_token = os.environ.get("GAMIFICATION_TOKEN")
     except Exception as e:
         raise Exception("Environment variables not set")
 
-    return gamification_submission_url, gamification_token
+    return gamification_api_url, gamification_token
 
-def get_submissions_details_from_id(gamification_submission_url: str, gamification_token: str, submission_id: int):
+def get_submissions_details_from_id(gamification_api_url: str, gamification_token: str, submission_id: int):
     res = requests.get(
-        url=gamification_submission_url + str(submission_id) + "/",
+        url=f"{gamification_api_url}submission/{str(submission_id)}/",
         headers={
             "accept": "application/json",
             'Authorization': f'Token {gamification_token}'
