@@ -5,18 +5,15 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 import os
+from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filename, get_output_file_path
 
 csv.field_size_limit(sys.maxsize)
 
 def filter_submissions_script():
-    print("Enter the absolute path of your filtered consent csv file: ", end="")
-    actions_file_path = Path(input())
-    if not actions_file_path.exists():
-        raise Exception("Invalid path")
+    actions_file_path = get_user_filepath_input("Enter the absolute path of your filtered consent csv file: ")
     
-    output_filename = Path(Path(actions_file_path.name).stem + "_submissions.csv")
-    project_root_file_path = Path(__file__).parent.parent
-    output_file_path = project_root_file_path / "data" / output_filename
+    output_filename = add_stem_to_filename(actions_file_path, "submissions")
+    output_file_path = get_output_file_path(output_filename)
     
     filter_submissions(actions_file_path, output_file_path)
 

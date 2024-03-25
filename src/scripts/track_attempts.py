@@ -1,21 +1,16 @@
 import csv
 import sys
-from pathlib import Path
+from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filename, get_output_file_path
 
 csv.field_size_limit(sys.maxsize)
 
 def track_attempts_script():
-    print("Enter the absolute path of your filtered submissions csv file: ", end="")
-    actions_file_path = Path(input())
-    if not actions_file_path.exists():
-        raise Exception("Invalid path")
+    actions_file_path = get_user_filepath_input("Enter the absolute path of your filtered submissions csv file: ")
     
-    output_filename = Path(Path(actions_file_path.name).stem + "_attempts.csv")
-    project_root_file_path = Path(__file__).parent.parent
-    output_file_path = project_root_file_path / "data" / output_filename
+    output_filename = add_stem_to_filename(actions_file_path, "attempts")
+    output_file_path = get_output_file_path(output_filename)
     
     track_attempts(actions_file_path, output_file_path)
-
 
 def track_attempts(data_file, output_file_path):
     with open(data_file, 'r', encoding='latin1') as inp, open(output_file_path, 'w') as out:
