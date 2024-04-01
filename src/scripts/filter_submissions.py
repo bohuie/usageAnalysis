@@ -21,7 +21,7 @@ def filter_submissions(data_file, output_file_path):
     with open(data_file, 'r', encoding='utf-8-sig') as inp, open(output_file_path, 'w') as out:
         submission_column_names = ["actor", "data.status", "object_id", "time_created"]
         concept_column_names = ["question.type_name", "question.parent_category_name", "question.category_name"]
-        question_column_names = ["question.id", "question.difficulty"]
+        question_column_names = ["question.id", "question.difficulty", "question.event_obj.name", "question.is_practice", "question.is_exam"]
         tests_column_names = ["get_passed_test_results", "get_failed_test_results", "num_passed_tests", "num_failed_tests"]
         
         column_names = question_column_names + submission_column_names + concept_column_names + tests_column_names
@@ -51,6 +51,9 @@ def filter_submissions(data_file, output_file_path):
                 # question fields
                 row["question.id"] = get_submission_details_field(submission_details, ["question", "id"])
                 row["question.difficulty"] = get_submission_details_field(submission_details, ["question", "difficulty"])
+                row["question.event_obj.name"] = get_submission_details_field(submission_details, ["question", "event_obj", "name"])
+                row["question.is_practice"] = get_submission_details_field(submission_details, ["question", "is_practice"])
+                row["question.is_exam"] = get_submission_details_field(submission_details, ["question", "is_exam"])
 
                 # tests fields
                 passed_test = get_submission_details_field(submission_details, ["get_passed_test_results"])
@@ -88,7 +91,7 @@ def get_gamification_secrets():
 
 def get_submissions_details_from_id(gamification_api_url: str, gamification_token: str, submission_id: int):
     res = requests.get(
-        url=f"{gamification_api_url}submission/{str(submission_id)}/",
+        url=gamification_api_url + str(submission_id) + "/",
         headers={
             "accept": "application/json",
             'Authorization': f'Token {gamification_token}'

@@ -19,10 +19,14 @@ def track_attempts(data_file, output_file_path):
         writer = csv.DictWriter(out, fieldnames)
         writer.writeheader()
         question = {}
+        optionalTotal = 0
+        mandatoryTotal = 0
+        questionsTotal = 0
 
         for row in reader:
             question_id = row['question.id']
             actor = row['actor']
+            is_practice = row['question.is_practice']
                 
             # Check if question_id exists in the question dictionary
             if question_id not in question:
@@ -34,11 +38,23 @@ def track_attempts(data_file, output_file_path):
                 else:
                     question[question_id][actor] += 1
                 
+            # Check if question is optional or mandatory
+            if is_practice == 'True':
+                optionalTotal += 1
+            else:
+                mandatoryTotal+= 1
+
             # Write the nth attempt value to the 'nth_attempt' column
             row['nth_attempt'] = question[question_id][actor]
             
             # Write the row to the output CSV file
             writer.writerow(row)
+
+        # Print out total optional and mandatory questions
+        print(f"Total optional submissions in May: {optionalTotal}")
+        print(f"Total mandatory submissions in May: {mandatoryTotal}")
+        questionsTotal = optionalTotal + mandatoryTotal
+        print(f"Total number of submissions in May: {questionsTotal}")
 
 
 
