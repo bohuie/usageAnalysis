@@ -8,11 +8,11 @@ from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filen
 def filter_engagement_script():
     
 
-    actions_file_path = get_user_filepath_input("Enter the absolute path of attempts csv file: ")
-    output_filename = add_stem_to_filename(actions_file_path, "engagement")
+    attempts_file_path = get_user_filepath_input("Enter the absolute path of attempts csv file: ")
+    output_filename = add_stem_to_filename(attempts_file_path, "engagement")
     output_file_path = get_output_file_path(output_filename)
     
-    filter_engagement(actions_file_path, output_file_path)
+    filter_engagement(attempts_file_path, output_file_path)
 
 def filter_engagement(data_file_path, output_file_path):
     data = pd.read_csv(data_file_path)
