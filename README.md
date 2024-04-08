@@ -34,7 +34,7 @@ Analysis of data
     python3 -m src.scripts.<script_name_without_.py>
     ```
 
-## filterSubmissions.py
+## Environment setup
 
 1. Go to https://gamification.ok.ubc.ca/
 
@@ -44,11 +44,80 @@ Analysis of data
 
 4. On Network tab select ``api-token-auth`` -> Preview -> token
 
-5. Set ``GAMIFICATION_SUBMISSION_URL`` and ``GAMIFICATION_TOKEN`` with your token
+5. Set ``GAMIFICATION_SUBMISSION_URL`` and ``GAMIFICATION_TOKEN`` with your token in your created ``.env`` file
 
-6. Make sure you have your actions csv filtered first with filterConsent.py
+## Running specific scripts
 
-7. Run filterSubmissions.py file one your filtered actions csv by consent
-    ```bash
-        python3 -m src.scripts.filter_submissions
-    ```
+All scripts with their description and requirements.
+
+## get_questions.py
+
+### Description
+Gets all gamification questions through api and saves it as ``questions.json`` in data folder
+
+### Requirement:
+- None
+
+
+## analysis_questions.py
+
+### Description
+Counts all questions from gamification by categories and saves the statistic into a csv file
+
+### Requirement:
+- questions.json from get_questions.py
+
+
+## filter_consent.py
+
+### Description
+Filters actions csv data, that can be downloaded from gamification admin panel, by student consent.
+
+### Requirement:
+- actions csv data from gamification
+- student consent csv data from gamification
+
+
+## filter_submission.py
+
+### Description
+Filters actions csv data to get only student submissions. Gets question details for each submission and saves it into a csv file.
+
+### Requirement:
+- actions csv data from gamification
+
+
+## filter_optional_submission.py
+
+### Description
+Filters actions csv data to get only student submissions. Gets question details for each submission and saves it into a ``2 different csv file, 1 includes only optional submissions (submissions for practice questions) and the other is every other submissions``.
+
+### Requirement:
+- actions csv data from gamification
+
+
+## track_attempts.py
+
+### Description
+Adds a attemps column to the submission csv data which counts which attempt it was for a certain user for a certain question.
+
+### Requirement:
+- submissions csv data from filter_submission.py or filter_optional_submission.py
+
+
+## engagement.py
+
+### Description
+Analyses correct and incorrect submissions with users' attemps to check user accuracy per question per category.
+
+### Requirement:
+- submissions csv data with attemps column from track_attempts.py
+
+
+## barChart.py
+
+### Description
+Creates bar chart for submissions csv data for number of submissions per period of time (per week).
+
+### Requirement:
+- submissions csv data from filter_submission.py or filter_optional_submission.py
