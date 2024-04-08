@@ -1,7 +1,6 @@
 import csv
 import sys
 from datetime import datetime
-from pathlib import Path
 import requests
 from dotenv import load_dotenv
 import os
@@ -13,12 +12,15 @@ def filter_submissions_script():
     actions_file_path = get_user_filepath_input("Enter the absolute path of your filtered consent csv file: ")
     
     output_filename = add_stem_to_filename(actions_file_path, "submissions")
-    output_file_path = get_output_file_path(output_filename)
+    optional_output_filename = add_stem_to_filename(output_filename, "optional")
+    optional_output_file_path = get_output_file_path(optional_output_filename)
+    others_output_filename = add_stem_to_filename(output_filename, "others")
+    others_output_file_path = get_output_file_path(others_output_filename)
     
-    filter_submissions(actions_file_path, output_file_path)
+    filter_optional_submissions(actions_file_path, optional_output_file_path, others_output_file_path)
 
-def filter_submissions(data_file, output_file_path):
-    with open(data_file, 'r', encoding='utf-8-sig') as inp, open(output_file_path, 'w') as out:
+def filter_optional_submissions(data_file, optional_output_file_path, others_output_file_path):
+    with open(data_file, 'r', encoding='utf-8-sig') as inp, open(optional_output_file_path, 'w') as optional_out, open(others_output_file_path, 'w') as others_out:
         submission_column_names = ["actor", "data.status", "object_id", "time_created"]
         concept_column_names = ["question.type_name", "question.parent_category_name", "question.category_name"]
         question_column_names = ["question.id", "question.difficulty", "question.event_obj.name", "question.is_practice", "question.is_exam"]
@@ -27,8 +29,10 @@ def filter_submissions(data_file, output_file_path):
         column_names = question_column_names + submission_column_names + concept_column_names + tests_column_names
 
         reader = csv.DictReader(inp)
-        writer = csv.DictWriter(out, column_names)
-        writer.writeheader()
+        optional_submissions_writer = csv.DictWriter(optional_out, column_names)
+        optional_submissions_writer.writeheader()
+        others_submissions_writer = csv.DictWriter(others_out, column_names)
+        others_submissions_writer.writeheader()
 
         gamification_api_url, gamification_token = get_gamification_secrets()
 
@@ -68,7 +72,10 @@ def filter_submissions(data_file, output_file_path):
         sorted_rows = sorted(rows_to_sort, key=lambda x: ( x["question.id"],x["actor"],datetime.fromisoformat(x["time_created"])))
     
         for row in sorted_rows:
-            writer.writerow(row)
+            if row["question.is_practice"] == True:
+                optional_submissions_writer.writerow(row)
+            else:
+                others_submissions_writer.writerow(row)
 
 def get_submission_details_field(submission_details: dict, field_path: list):
     try:
