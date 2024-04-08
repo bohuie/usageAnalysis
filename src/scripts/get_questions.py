@@ -38,7 +38,7 @@ def get_gamification_secrets():
     return gamification_api_url, gamification_token
 
 def get_questions_first_page_utl(gamification_api_url):
-    return f"{gamification_api_url}questions/?ordering=id&page={1}&page_size={1}"
+    return f"{gamification_api_url}questions/?ordering=id&page={1}&page_size={100}"
 
 def get_questions_with_url(url, gamification_token):
     try:
