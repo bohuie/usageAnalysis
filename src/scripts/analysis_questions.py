@@ -13,7 +13,9 @@ def analysis(questions_json_file_path):
     questions_df = pd.json_normalize(questions_json['questions'])
 
     file_name = "questions_per_concept_and_type.csv"
-    questions_df[questions_df["is_verified"] == True].groupby(['parent_category_name', 'category_name', 'type_name']).size().to_csv(get_output_file_path(file_name), sep='\t')
+    verified_questions_df = questions_df[questions_df["is_verified"] == True].groupby(['parent_category_name', 'category_name', 'type_name']).size().to_frame('count')
+    verified_questions_df.to_csv(get_output_file_path(file_name), sep='\t')
+    print(verified_questions_df['count'].sum())
 
 if __name__ == "__main__":
     questions_analysis()
