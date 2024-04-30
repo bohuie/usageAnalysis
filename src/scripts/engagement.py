@@ -1,13 +1,7 @@
-import os
-import csv
-from dotenv import load_dotenv
 import pandas as pd
-import json
-import pathlib
 from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filename, get_output_file_path
-def filter_engagement_script():
-    
 
+def filter_engagement_script():
     attempts_file_path = get_user_filepath_input("Enter the absolute path of attempts csv file: ")
     output_filename = add_stem_to_filename(attempts_file_path, "engagement")
     output_file_path = get_output_file_path(output_filename)
@@ -29,11 +23,7 @@ def filter_engagement(data_file_path, output_file_path):
         else:
             total.at[index, 'accuracy'] = 0
             
-    print(total.head())
     total.to_csv(output_file_path, sep=',')
-#user, parent, child, type, question id, accuracy, num of attempts
-#take the data, aggregate everything per concept 
-
 
 if __name__ == "__main__":
     filter_engagement_script()

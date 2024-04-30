@@ -14,7 +14,7 @@ def get_output_file_path(output_filename: str) -> Path:
 def get_project_root_file_path() -> Path:
     return Path(__file__).parent.parent.parent
 
-def get_stemmed_filename(file_path: Path) -> str:
+def get_stemmed_filename(file_path: Path) -> Path:
     return Path(file_path.name).stem
 
 def add_stem_to_filename(file_path: Path, stem: str) -> Path:
