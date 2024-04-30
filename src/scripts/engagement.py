@@ -23,11 +23,7 @@ def filter_engagement(data_file_path, output_file_path):
         else:
             total.at[index, 'accuracy'] = 0
             
-    print(total.head())
     total.to_csv(output_file_path, sep=',')
-#user, parent, child, type, question id, accuracy, num of attempts
-#take the data, aggregate everything per concept 
-
 
 if __name__ == "__main__":
     filter_engagement_script()

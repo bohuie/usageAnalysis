@@ -59,10 +59,19 @@ Gets all gamification questions through api and saves it as ``questions.json`` i
 - None
 
 
-## analysis_questions.py
+## questions_category_count.py
 
 ### Description
 Counts all questions from gamification by categories and saves the statistic into a csv file
+
+### Requirement:
+- questions.json from get_questions.py
+
+
+## question_variation_count.py
+
+### Description
+Gets all question variation from gamification and is saved into a csv file
 
 ### Requirement:
 - questions.json from get_questions.py
@@ -121,3 +130,32 @@ Creates bar chart for submissions csv data for number of submissions per period 
 
 ### Requirement:
 - submissions csv data from filter_submission.py or filter_optional_submission.py
+
+
+## attempt_statistic.py
+
+### Description
+Analyses submissions data to get per question per user statistics like avg attempts per user, stdev, minimum number of attermpts, maximum number of attempts, and total users attempted. This statistic is saved into a csv file.
+
+### Requirement:
+- submissions csv data from filter_submission.py or filter_optional_submission.py
+
+
+## filter_gradebook.py
+
+### Description
+Filters gradebook based on consent from gamification
+
+### Requirement:
+- gradebook csv data
+- consent csv data from gamification
+
+
+## gradebook_engagement_statistics.py
+
+### Description
+Analyzes the gradebook and submissions seperating student engagement based on final exam grade and overall course grade.
+
+### Requirement:
+- submissions csv data from filter_submission.py or filter_optional_submission.py
+- filtered gradebook csv data from filter_gradebook.py
