@@ -57,6 +57,8 @@ All scripts with their description and requirements.
 3. track_attempts.py
 4. engagement.py
 5. grade_behavior.py
+6. final_grade_compiled.py
+7. time_gap.py
 
 
 ## get_questions.py
