@@ -5,7 +5,7 @@ from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filen
 
 def input_behavior_script():
     engagement_file_path = get_user_filepath_input("Enter the absolute path of engagement csv file: ")
-    grade_file_path = get_user_filepath_input("Enter the absolute path to gradebook csv file: ")
+    grade_file_path = get_user_filepath_input("Enter the absolute path to filtered gradebook csv file: ")
     output_filename = add_stem_to_filename(engagement_file_path, "sort")
     output_file_path = get_output_file_path(output_filename)
     

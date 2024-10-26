@@ -50,6 +50,15 @@ Analysis of data
 
 All scripts with their description and requirements.
 
+## Order of scripts to run
+
+1. filter_consent.py
+2. filter_optional_submissions.py
+3. track_attempts.py
+4. engagement.py
+5. grade_behavior.py
+
+
 ## get_questions.py
 
 ### Description
@@ -85,6 +94,7 @@ Filters actions csv data, that can be downloaded from gamification admin panel, 
 ### Requirement:
 - actions csv data from gamification
 - student consent csv data from gamification
+- teachers csv data
 
 
 ## filter_submission.py
@@ -93,7 +103,7 @@ Filters actions csv data, that can be downloaded from gamification admin panel, 
 Filters actions csv data to get only student submissions. Gets question details for each submission and saves it into a csv file.
 
 ### Requirement:
-- actions csv data from gamification
+- filtered consent csv data from filter_consent.py
 
 
 ## filter_optional_submission.py
@@ -158,4 +168,13 @@ Analyzes the gradebook and submissions seperating student engagement based on fi
 
 ### Requirement:
 - submissions csv data from filter_submission.py or filter_optional_submission.py
+- filtered gradebook csv data from filter_gradebook.py
+
+## grade_behavior.py
+
+### Description
+Summarizes student activity and performance on Canvas Gamification. Sorted by overall grade level and question categories, as TA (average total attempts), %A (average correct attempts), TQ (average total questions)
+
+### Requirement:
+- engagement csv data from engagement.py
 - filtered gradebook csv data from filter_gradebook.py
