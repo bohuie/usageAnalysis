@@ -180,3 +180,11 @@ Summarizes student activity and performance on Canvas Gamification. Sorted by ov
 ### Requirement:
 - engagement csv data from engagement.py
 - filtered gradebook csv data from filter_gradebook.py
+
+## time_gap.py
+
+### Description
+Produces bar graph of the average time gap of students' attempts
+
+### Requirement:
+- time gap input csv file (currently excel generated; merged between attempts and gradebook csv file)
