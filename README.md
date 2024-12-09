@@ -6,16 +6,24 @@ Analysis of data
 - Python3
 
 ## Project setup
-1. Insert csv files into the data folder
+1. Insert csv files into the data folder ([]actions.csv, grades.csv, gradebook from each sessions, grades.csv, []timeinput.csv, []dates.csv)
 
 2. Make a python virtual environment
     ```bash
     python3 -m venv venv
     ```
+    OR for windows,
+    ```bash
+    py -m venv venv
+    ```
 
 3. Activate python virtual environment
     ```bash
     source venv/bin/activate
+    ```
+    OR for windows,
+    ```bash
+    venv/Scripts/activate
     ```
 
 4. Install the required packages
@@ -23,37 +31,31 @@ Analysis of data
     pip3 install -r requirements.txt
     ```
 
-5. Launch Jupyter Notebook OR run filtering script
-    ```bash
-    python3 -m jupyterlab
-    ```
+5. Environment setup
 
-    OR
+- Go to https://gamification.ok.ubc.ca/
+- Inspect page -> Network tab (make sure to do this before logging in, log out first if needed)
+- Login to your gamification account
+- On Network tab select ``api-token-auth`` -> Preview -> token
+- Set ``GAMIFICATION_SUBMISSION_URL`` and ``GAMIFICATION_TOKEN`` with your token in your created ``.env`` file
 
+6. run filtering script
     ```bash
     python3 -m src.scripts.<script_name_without_.py>
     ```
-
-## Environment setup
-
-1. Go to https://gamification.ok.ubc.ca/
-
-2. Inspect page -> Network tab
-
-3. Login to your gamification account
-
-4. On Network tab select ``api-token-auth`` -> Preview -> token
-
-5. Set ``GAMIFICATION_SUBMISSION_URL`` and ``GAMIFICATION_TOKEN`` with your token in your created ``.env`` file
+    OR for windows,
+    ```bash
+    py -m src.scripts.<script_name_without_.py>
+    ```
 
 ## Running specific scripts
 
 All scripts with their description and requirements.
 
-## Order of scripts to run
+## Order of scripts to run (description of scripts and required input files can be found below)
 
 1. filter_consent.py
-2. filter_optional_submissions.py
+2. filter_optional_submissions.py (can skip this if no need to analyze optional vs ma
 3. track_attempts.py
 4. engagement.py
 5. barChart.py
