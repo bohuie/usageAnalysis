@@ -198,4 +198,5 @@ Produces bar graph of the average time gap between students' attempts on questio
 Produces state diagram graph visualization of student's behavior/ activities on Canvas Gamification website
 
 ### Requirement:
+- pip install networkx
 - actor markov matrix csv
