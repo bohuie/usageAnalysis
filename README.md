@@ -6,7 +6,7 @@ Analysis of data
 - Python3
 
 ## Project setup
-1. Insert csv files into the data folder ([]actions.csv, grades.csv, gradebook from each sessions, grades.csv, []timeinput.csv, []dates.csv)
+1. Insert csv files into the data folder (*actions.csv, grades.csv, gradebook from each sessions, grades.csv, *timeinput.csv, *dates.csv) * = for all 3 sessions (Jan, May, Sep)
 
 2. Make a python virtual environment
     ```bash
