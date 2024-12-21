@@ -31,15 +31,16 @@ Analysis of data
     pip3 install -r requirements.txt
     ```
 
-5. Environment setup
+5. API Request Requirements
 
 - Go to https://gamification.ok.ubc.ca/
 - Inspect page -> Network tab (make sure to do this before logging in, log out first if needed)
 - Login to your gamification account
 - On Network tab select ``api-token-auth`` -> Preview -> token
 - Set ``GAMIFICATION_SUBMISSION_URL`` and ``GAMIFICATION_TOKEN`` with your token in your created ``.env`` file
+- rename .env.txt file to ".env" and save
 
-6. run filtering script
+6. run scripts following the order below
     ```bash
     python3 -m src.scripts.<script_name_without_.py>
     ```
@@ -55,14 +56,13 @@ All scripts with their description and requirements.
 ## Order of scripts to run (description of scripts and required input files can be found below)
 
 1. filter_consent.py
-2. filter_optional_submissions.py (can skip this if no need to analyze optional vs ma
+2. filter_submissions.py
 3. track_attempts.py
 4. engagement.py
-5. barChart.py
-6. filter_gradebook.py
-7. grade_behavior.py
-8. time_gap.py
-9. state_diagram.py
+5. filter_gradebook.py
+6. grade_behavior.py
+7. time_gap.py
+8. state_diagram.py
 
 
 ## get_questions.py
