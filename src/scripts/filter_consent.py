@@ -2,7 +2,7 @@ import csv
 import sys
 from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filename, get_output_file_path
 
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(1000000)
 
 def filter_data_by_consent_script():
     actions_file_path = get_user_filepath_input("Enter the absolute path of your actions csv file: ")
@@ -15,7 +15,7 @@ def filter_data_by_consent_script():
     filter_data_by_consent(actions_file_path, consent_file_path, teachers_file_path, output_file_path)
 
 def filter_data_by_consent(data_file, consent_file, teachers_file, output_file_path):
-    with open(data_file, 'r') as inp, open(consent_file, 'r') as consent, open(teachers_file, 'r') as teachers, open(output_file_path, 'w') as out:
+    with open(data_file, 'r', encoding="utf8") as inp, open(consent_file, 'r', encoding="utf8") as consent, open(teachers_file, 'r', encoding="utf8") as teachers, open(output_file_path, 'w', encoding="utf8") as out:
         consent_reader = csv.DictReader(consent)
         teachers_reader = csv.DictReader(teachers)
         consent_hashmap = []

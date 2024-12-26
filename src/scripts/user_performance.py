@@ -2,7 +2,7 @@ import csv
 import sys
 from src.util.filepath_helpers import get_user_filepath_input, get_output_file_path
 
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(1000000)
 
 def userPerformance_script():
     filtered_submissions_file_path = get_user_filepath_input()

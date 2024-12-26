@@ -1,15 +1,17 @@
 import pandas as pd
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filename, get_output_file_path
 
 def time_gap_script():
-    df = get_user_filepath_input("Enter the absolute path of time gap input csv file: ")
-    output_file_path = get_output_file_path(df)
-    avg_time_gap = time_gap(df, output_file_path)
+    file_path = str(get_user_filepath_input("Enter the absolute path of time gap input csv file: "))
+    output_file_path = os.path.dirname(file_path)
+    avg_time_gap = time_gap(file_path, output_file_path)
     create_grouped_bar_chart(avg_time_gap)
 
-def time_gap(df, output_dir):    
+def time_gap(file, output_dir):
+    df = pd.read_csv(file)    
     df['time_created'] = pd.to_datetime(df['time_created'])
     df = df.sort_values(['actor', 'question.id', 'time_created'])
     df['time_diff'] = df.groupby(['actor', 'question.id'])['time_created'].diff()

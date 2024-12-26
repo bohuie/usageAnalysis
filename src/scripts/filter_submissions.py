@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 import os
 from src.util.filepath_helpers import get_user_filepath_input, add_stem_to_filename, get_output_file_path
 
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(1000000)
+print(sys.maxsize)
 
 def filter_submissions_script():
     actions_file_path = get_user_filepath_input("Enter the absolute path of your filtered consent csv file: ")
