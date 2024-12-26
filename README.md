@@ -137,6 +137,7 @@ Analyses correct and incorrect submissions with users' attemps to check user acc
 
 ### Requirement:
 - submissions csv data with attemps column from track_attempts.py
+- may need to run ```pip uninstall numpy``` and ```pip install numpy``` if there are issues with importing pandas
 
 
 ## barChart.py
