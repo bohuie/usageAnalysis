@@ -19,7 +19,7 @@ def filter_engagement(data_file_path, output_file_path):
     for index, row in total.iterrows():
         correctrow = correct[(correct['actor'] == row['actor']) & (correct['question.parent_category_name'] == row['question.parent_category_name']) & (correct['question.category_name'] == row['question.category_name']) & (correct['question.type_name'] == row['question.type_name']) & (correct['question.id'] == row['question.id'])]
         if len(correctrow['correctcounts'].values) >= 1 :
-            total.at[index, 'accuracy'] = int(correctrow['correctcounts'])/int(row['counts'])
+            total.at[index, 'accuracy'] = int(correctrow['correctcounts'].iloc[0])/int(row['counts'])
         else:
             total.at[index, 'accuracy'] = 0
             

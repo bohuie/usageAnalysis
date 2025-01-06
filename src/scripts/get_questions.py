@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import os
 import json
 
-csv.field_size_limit(sys.maxsize)
+csv.field_size_limit(1000000)
 
 def get_questions():
     gamification_api_url, gamification_token = get_gamification_secrets()
