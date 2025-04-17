@@ -1,3 +1,6 @@
+![image](https://github.com/user-attachments/assets/78f37c4e-461e-4bc6-972f-94fdd476c548)
+
+
 #### process_mining.R
 
 The process_mining.R takes various input data source file and maps user behaviours to SRL subcategories, filter records based on student IDs and grade ranges. It generates a cleaned combined output filed output.csv and visualizes student behavior patterns using a Markov model with pMineR library.
