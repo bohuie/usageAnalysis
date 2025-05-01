@@ -21,12 +21,18 @@ filterDF$user <- as.character(filterDF$user)
 gradesDF$actor_id <- as.character(gradesDF$actor_id)
 
 # Only keep student who consented and is in the grade.csv
-valid_users <- filterDF %>%
-  filter(consent == TRUE, is_student == TRUE, user %in% gradesDF$actor_id) %>%
+# valid_users <- filterDF %>%
+#   filter(consent == TRUE, is_student == TRUE, user %in% gradesDF$actor_id) %>%
+#   pull(user)
+
+# myDF <- myDF[myDF$actor %in% valid_users, ]
+
+# Keep all students
+valid_users_all <- filterDF %>%
+  filter(is_student == TRUE) %>%
   pull(user)
 
-# Update main dataframe
-myDF <- myDF[myDF$actor %in% valid_users, ]
+myDF <- myDF[myDF$actor %in% valid_users_all, ]
 
 # Define action code mapping
 action_code_mapping <- list(
@@ -62,7 +68,13 @@ action_code_mapping <- list(
 )
 
 # Apply action code mapping
-myDF$action_code <- unlist(action_code_mapping[myDF$description])
+myDF$action_code <- sapply(myDF$description, function(desc) {
+  if (!is.null(action_code_mapping[[desc]])) {
+    return(action_code_mapping[[desc]])
+  } else {
+    return(NA)
+  }
+})
 myDF$action_code[is.na(myDF$action_code)] <- "UNKNOWN"
 
 # Remove rows where action_code is NULL or NA
@@ -172,9 +184,11 @@ myDF <- myDF %>%
   select(-prev_date, -prev_day, -curr_day, -gap_min, -new_day, 
          -new_session_day_rule, -new_session_gap_rule, -is_first, -new_session_flag, -session_index)
 
-write.csv(myDF, "output.csv", row.names = FALSE)
-cat("Output data saved to 'output.csv'\n")
+# write.csv(myDF, "output.csv", row.names = FALSE)
+# cat("Output data saved to 'output.csv'\n")
 
+write.csv(myDF, "output_all_students.csv", row.names = FALSE)
+cat("Output including all students saved to 'output_all_students.csv'\n")
 
 
 # Make a working copy of myDF
@@ -189,9 +203,9 @@ filter_student_id <- NULL         # e.g., "12345678"
 
 # Filter by grade range
 # NULL by default to include all grade range
-grade_item <- "mid_1"           # Options: "mid_1", "mid_2", "final_exam", "lab", "final_score", or NULL
-min_score <- 90                  # Minimum percentage
-max_score <- 100                  # Maximum percentage
+grade_item <- NULL          # Options: "mid_1", "mid_2", "final_exam", "lab", "final_score", or NULL
+min_score <- NULL                 # Minimum percentage
+max_score <- NULL                  # Maximum percentage
 
 # Define grade columns
 grade_cols <- c("mid_1", "mid_2", "final_exam", "lab", "final_score")
@@ -250,9 +264,11 @@ markov_input <- filteredDF %>%
   ) %>%
   as.data.frame()
 
-# Load into PMinR
-objDL <- dataLoader(verbose.mode = FALSE)
-objDL$load.data.frame(
+# create a data loader
+data_loader <- dataLoader(verbose.mode = FALSE)
+
+# load data frame into the data loader
+data_loader$load.data.frame(
   mydata = markov_input,
   IDName = "CaseID",
   EVENTName = "Event",
@@ -260,9 +276,11 @@ objDL$load.data.frame(
   format.column.date = "%Y-%m-%d %H:%M:%S"
 )
 
-fomm <- firstOrderMarkovModel(verbose.mode = FALSE)
-fomm$loadDataset(dataList = objDL$getData())
-fomm$trainModel()
+# train the first-order Markov model
+markov_model <- firstOrderMarkovModel(verbose.mode = FALSE)
+markov_model$loadDataset(dataList = data_loader$getData())
+markov_model$trainModel()
 
-grViz(fomm$plot(giveItBack = TRUE))
+# plot
+grViz(markov_model$plot(giveItBack = TRUE))
 
