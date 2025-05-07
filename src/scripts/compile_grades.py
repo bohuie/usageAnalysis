@@ -12,7 +12,7 @@ SESSION_GRADE_COLUMN_MAP = {
 }
 
 def generate_final_grades_script():
-    folder_path = get_user_filepath_input("Enter the absolute path of the folder: ")
+    folder_path = get_user_filepath_input("Enter the absolute path of the folder containing outputs from filter_gradebook.py: ")
     
     if not os.path.isdir(folder_path):
         print("Invalid folder path.")
