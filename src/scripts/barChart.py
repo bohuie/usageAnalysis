@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import os
 from src.util.filepath_helpers import get_user_filepath_input
@@ -38,20 +39,31 @@ def barChart(input_file, reference_dates, session):
 
     # Group the DataFrame by week number and count the number of submissions in each week
     submissions_per_week = df.groupby('week')['time_created'].count()
-    all_weeks = range(submissions_per_week.index.min(), submissions_per_week.index.max() + 1)
+
+    start = submissions_per_week.index.min()
+    end = submissions_per_week.index.max()
+    step = 0.5 if any((submissions_per_week.index % 1) != 0) else 1  # auto-detect step
+
+    all_weeks = np.arange(start, end + step, step)
+
     submissions_per_week = submissions_per_week.reindex(all_weeks, fill_value=0)
+    submissions_per_week = submissions_per_week.sort_index()
 
     # Create a bar plot with week numbers on x-axis and number of submissions on y-axis
-    plt.bar(submissions_per_week.index, submissions_per_week.values)
+
+    x = submissions_per_week.index.to_list()
+    y = submissions_per_week.values
+    plt.bar(x, y, width=0.4, align='center')
+
     plt.xlabel('Week Number')
     plt.ylabel('Number of Submissions')
     plt.title(f'Submissions per Week ({session} Term)')
     plt.ylim(0, 2750)
     plt.yticks(range(0, 2751, 250))
-    plt.xticks(rotation=45, ha='right')
-
-    for i, v in enumerate(submissions_per_week.values):
-        plt.text(i + 2, v + 50, str(v), ha='center')  # Add some offset to avoid overlapping bars
+    plt.xticks(ticks=x, labels=[str(week) for week in x], rotation=45, ha='right')
+    
+    for xi, yi in zip(x, y):
+        plt.text(xi, yi + 50, str(yi), ha='center', fontsize=8)
 
     plt.show()
 

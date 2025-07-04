@@ -146,3 +146,33 @@ This script performs clustering and process mining analysis on student action se
 ##### Input Data Files
 
 The output.csv generated from process_minine.R is required to put under working directory. output_clustered.csv will be generated showing the clustering of each student based on k value. output_clustered_cleaned.csv will be generated to drop the filtered out statistically insignificant actions.
+
+
+#### alternative_clustering.r
+
+Generates markov plot, frequency histogram, and frequency heat map. Clustered by grade group, using action_code as events.
+
+
+#### cluster_gradefluctuations.r
+
+Generates markov plot, frequency histogram, and frequency heat map. Clustered by grade fluctuation from Midterms to Final (MT1 to MT2, then MT2 to Final, depending on code) with threshold of 5%, using srl_subcategory as events.
+
+
+#### clusterbeforedrop.r
+
+Generates markov plot to show clustering by behavior before and after z-score filtering (insignificant z_scores being dropped).
+
+
+#### fluctuations_byaction.r
+
+Generates markov plot, frequency histogram, and frequency heat map. Clustered by grade fluctuation from Midterms to Final (MT1 to MT2, then MT2 to Final, depending on code) with threshold of 5%, using action_code as events.
+
+
+#### srl_subcategory_clustering.r
+
+Generates markov plot, frequency histogram, and frequency heat map. Clustered by grade group, using srl_subcategory as events.
+
+
+#### checkZscore.py
+
+Verifies correct z_score calculation in clustering.R.

@@ -6,9 +6,9 @@ library(pMineR)
 library(readr)
 
 # Load the CSV files
-myDF <- read.csv("input.csv", stringsAsFactors = FALSE, sep = ",", quote = "\"")
-filterDF <- read.csv("filter.csv", stringsAsFactors = FALSE)
-gradesDF <- read.csv("grades.csv", stringsAsFactors = FALSE)
+myDF <- read.csv("data/input.csv", stringsAsFactors = FALSE, sep = ",", quote = "\"")
+filterDF <- read.csv("data/filter.csv", stringsAsFactors = FALSE)
+gradesDF <- read.csv("data/grades.csv", stringsAsFactors = FALSE)
 
 # Clean the date format
 myDF$time_created <- ymd_hms(gsub("T", " ", myDF$time_created)) 
