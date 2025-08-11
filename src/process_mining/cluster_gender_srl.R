@@ -1,6 +1,3 @@
-
-# by grade group instead of by behavior cluster, srl stages
-
 library(dplyr)
 library(tidyr)
 library(lubridate)
@@ -14,10 +11,14 @@ library(pMineR)
 library(DiagrammeR)
 
 # Load the full dataset
-df <- read.csv("data/output.csv", stringsAsFactors = FALSE)
+df <- read.csv("updated_output.csv", stringsAsFactors = FALSE)
 df$time_created <- ymd_hms(df$time_created)
 df <- df %>% filter(!is.na(srl_subcategory), srl_subcategory != "")
 df$srl_subcategory[df$srl_subcategory == "Begin"] <- "Logged In"
+
+# Load gender data and join to main df by actor
+gender_df <- read.csv("data/gender.csv", stringsAsFactors = FALSE)
+df <- df %>% left_join(gender_df, by = "actor")
 
 # Compute action-to-action transitions
 transitions <- df %>%
@@ -52,9 +53,7 @@ flat_z$z_score <- scale(flat_z$count)
 
 write.csv(flat_z, "srl_flat_z.csv", row.names = FALSE)
 
-# Plot histogram of z-scores to help decide threshold
-library(ggplot2)
-
+# Plot histogram of z-scores
 hist_plot <- ggplot(flat_z, aes(x = z_score)) +
   geom_histogram(binwidth = 0.5, fill = "salmon", color = "black") +
   geom_text(stat = "bin", aes(label = ..count..), binwidth = 0.5, vjust = -0.5, size = 3) +
@@ -85,7 +84,7 @@ pheatmap(as.matrix(z_matrix),
 flat_z$dropped <- ifelse(flat_z$z_score < -0.319, "Dropped", "Kept")
 flat_z$valid <- ifelse(flat_z$dropped == "Dropped", NA, flat_z$count)
 
-# Save dropped transitions to CSV
+# Save dropped transitions
 dropped_transitions <- flat_z %>%
   filter(dropped == "Dropped") %>%
   arrange(desc(count)) %>%
@@ -125,53 +124,32 @@ df_pruned <- df %>%
     transition_pair = paste(srl_subcategory, next_action, sep = " → "),
     reverse_pair = paste(prev_action, srl_subcategory, sep = " → "),
     drop_flag = (
-      session_size == 1 |                                # drop sessions with only 1 action
+      session_size == 1 |                                # drop single-action sessions
         transition_pair %in% dropped_pairs |               # drop from-actions of dropped pairs
-        (row_number() == n() & reverse_pair %in% dropped_pairs)  # drop last action if previous pair was dropped
+        (row_number() == n() & reverse_pair %in% dropped_pairs)  # drop last action if previous pair dropped
     )
   ) %>%
   ungroup() %>%
   filter(!drop_flag) %>%
   select(-session_size, -next_action, -prev_action, -transition_pair, -reverse_pair, -drop_flag)
 
-# Save Z-pruned dataset before analysis
 write.csv(df_pruned, "srl_output_pruned.csv", row.names = FALSE)
 
-# --- Replace clustering by grade groups based on final_score ---
+# --- Replace clustering by gender instead of grade ---
+# Remove existing cluster/group variable if any, then join gender
 df_pruned <- df_pruned %>%
-  mutate(
-    final_score = gsub("%", "", final_score),  # remove % sign
-    final_score = as.numeric(final_score),     # convert to numeric
-    grade_group = case_when(
-      final_score >= 80.00 & final_score <= 100.00 ~ "A",
-      final_score >= 70.00 & final_score <= 79.00  ~ "B",
-      final_score >= 60.00 & final_score <= 69.00  ~ "C",
-      final_score >= 50.00 & final_score <= 59.00  ~ "D",
-      final_score < 50.00                       ~ "F",
-      TRUE                                  ~ NA_character_
-    )
-  )
+  select(-gender) %>%
+  left_join(gender_df, by = "actor") %>%
+  filter(!is.na(gender))
 
-# Map each actor to their grade_group (taking distinct values)
-actor_grade_groups <- df_pruned %>%
-  select(actor, grade_group) %>%
-  distinct() %>%
-  filter(!is.na(grade_group))
+# Save clustered dataset with gender groups
+write.csv(df_pruned, "srl_output_clustered_all_students.csv", row.names = FALSE)
 
-# Join grade groups to df_pruned
-df_with_clusters <- df_pruned %>%
-  select(-grade_group) %>%  # Remove duplicate before join
-  left_join(actor_grade_groups, by = "actor")
-
-
-# Save clustered dataset with grade groups
-write.csv(df_with_clusters, "srl_output_clustered_all_students.csv", row.names = FALSE)
-
-# ----- Markov Model Plot with Grade Groups -----
+# --- Markov Model Plot with Gender Groups ---
 df_clustered <- read.csv("srl_output_clustered_all_students.csv", stringsAsFactors = FALSE)
 df_clustered$time_created <- ymd_hms(df_clustered$time_created)
 
-# Clean and convert grade columns
+# Keep original grade columns for overall summary
 grade_columns <- c("lab", "mid_1", "mid_2", "final_exam", "final_score")
 for (col in grade_columns) {
   if (col %in% colnames(df_clustered)) {
@@ -179,23 +157,20 @@ for (col in grade_columns) {
   }
 }
 
-# Prepare session-level data filtered by grade_group instead of cluster
 df_plot_ready <- df_clustered %>%
-  filter(!is.na(grade_group), !is.na(srl_subcategory)) %>%
-  select(session_id, time_created, srl_subcategory, grade_group, actor, all_of(grade_columns))
+  filter(!is.na(gender), !is.na(srl_subcategory)) %>%
+  select(session_id, time_created, srl_subcategory, gender, actor, all_of(grade_columns))
 
-# Rename the specific SRL subcategory before further analysis and plotting
 df_plot_ready <- df_plot_ready %>%
   mutate(srl_subcategory = ifelse(srl_subcategory == "Setup, Technical & Account Management",
                                  "Setup & Technical",
                                  srl_subcategory))
 
-# Get list of grade groups
-all_grade_groups <- sort(unique(df_plot_ready$grade_group))
+all_genders <- sort(unique(df_plot_ready$gender))
 
-for (target_grade in all_grade_groups) {
+for (target_gender in all_genders) {
   cluster_data <- df_plot_ready %>%
-    filter(grade_group == target_grade) %>%
+    filter(gender == target_gender) %>%
     rename(CaseID = session_id,
            Timestamp = time_created,
            Event = srl_subcategory)
@@ -211,7 +186,7 @@ for (target_grade in all_grade_groups) {
     nrow()
   
   title_str <- paste0(
-    "Grade Group ", target_grade, ": ",
+    "Gender ", target_gender, ": ",
     "Lab=", grade_avg$lab, ", ",
     "MT1=", grade_avg$mid_1, ", ",
     "MT2=", grade_avg$mid_2, ", ",
@@ -238,116 +213,115 @@ for (target_grade in all_grade_groups) {
     
     print(grViz(fomm$plot(giveItBack = TRUE)))
     
-    # Only pause if it's NOT the last group
-    if (target_grade != max(all_grade_groups)) {
-      readline(prompt = "Press [Enter] to continue to the next grade group...")
+    if (target_gender != max(all_genders)) {
+      readline(prompt = "Press [Enter] to continue to the next gender group...")
     }
   } else {
-    cat("⚠️  Grade Group", target_grade, "has no valid data.\n")
+    cat("⚠️  Gender", target_gender, "has no valid data.\n")
   }
 }
 
-# --- Histogram of srl_subcategory per grade group ---
-# Before the loop, get all unique srl_subcategory values (ordered)
-all_subcategories <- sort(unique(df_plot_ready$srl_subcategory))
+# --- Histogram of srl_subcategory per gender (normalized) ---
 
-# Calculate max count across all grades for y-axis scaling
-max_count <- 0
-for (grade in all_grade_groups) {
-  freq_tbl <- df_plot_ready %>%
-    filter(grade_group == grade) %>%
+all_subcategories <- sort(unique(df_plot_ready$srl_subcategory))
+max_y_limit <- 200
+
+for (gender in all_genders) {
+  gender_data <- df_plot_ready %>%
+    filter(gender == gender) %>%
     count(srl_subcategory) %>%
     complete(srl_subcategory = all_subcategories, fill = list(n = 0))
   
-  max_count <- max(max_count, max(freq_tbl$n))
-}
-
-# Loop through each grade group
-for (grade in all_grade_groups) {
-  grade_data <- df_plot_ready %>%
-    filter(grade_group == grade) %>%
-    count(srl_subcategory) %>%
-    complete(srl_subcategory = all_subcategories, fill = list(n = 0))
-
-  num_students_in_grade <- df_plot_ready %>%
-    filter(grade_group == grade) %>%
+  num_students_in_gender <- df_plot_ready %>%
+    filter(gender == gender) %>%
     select(actor) %>%
     distinct() %>%
     nrow()
   
-  # Make srl_subcategory a factor with fixed levels for consistent ordering
-  grade_data$srl_subcategory <- factor(grade_data$srl_subcategory, levels = all_subcategories)
+  gender_data <- gender_data %>%
+    mutate(avg_count_per_person = n / num_students_in_gender)
   
-  # Plot histogram with counts on top of bars and fixed y axis
-  p <- ggplot(grade_data, aes(x = srl_subcategory, y = n)) +
+  gender_data$srl_subcategory <- factor(gender_data$srl_subcategory, levels = all_subcategories)
+  
+  p <- ggplot(gender_data, aes(x = srl_subcategory, y = avg_count_per_person)) +
     geom_bar(stat = "identity", fill = "skyblue", color = "black") +
-    geom_text(aes(label = n), vjust = -0.3, size = 3) +
-    scale_y_continuous(limits = c(0, max_count * 1.1), expand = expansion(mult = c(0, 0.05))) +
+    geom_text(aes(label = sprintf("%.2f", avg_count_per_person)), vjust = -0.3, size = 3) +
+    scale_y_continuous(limits = c(0, max_y_limit), expand = expansion(mult = c(0, 0.05))) +
     theme_minimal() +
-    theme(
-      panel.background = element_rect(fill = "white", color = NA),
-      plot.background = element_rect(fill = "white", color = NA),
-      axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(
-      title = paste("SRL Subcategory Frequency - Grade Group", grade),
-      x = paste0("SRL Subcategory (n = ", num_students_in_grade, ")"),
-      y = "Count"
+      title = paste("Average SRL Count per Person - Gender", gender),
+      x = paste0("SRL Subcategory (n = ", num_students_in_gender, ")"),
+      y = "Average Count per Person"
     )
   
-  # Save plot to PNG
-  filename <- paste0("srl_histogram_grade_", grade, ".png")
+  filename <- paste0("gender_srl_hist_", gender, ".png")
   ggsave(filename, plot = p, width = 12, height = 6)
-  cat("Saved histogram to:", filename, "\n")
+  cat("Saved normalized histogram to:", filename, "\n")
 }
 
+# --- Heatmap: Normalized SRL Subcategory Frequency by Gender ---
 
-# --- Heatmap: SRL Subcategory Frequency by Grade Group ---
-
-# Build frequency matrix: grade_group × srl_subcategory
 heatmap_df <- df_plot_ready %>%
-  count(grade_group, srl_subcategory) %>%
+  count(gender, srl_subcategory) %>%
   complete(
-    grade_group = all_grade_groups,
+    gender = all_genders,
     srl_subcategory = all_subcategories,
     fill = list(n = 0)
-  ) %>%
+  )
+
+n_students_by_gender <- df_plot_ready %>%
+  distinct(actor, gender) %>%
+  count(gender, name = "n_students")
+
+heatmap_df <- heatmap_df %>%
+  left_join(n_students_by_gender, by = "gender") %>%
+  mutate(avg_count_per_person = n / n_students) %>%
+  select(gender, srl_subcategory, avg_count_per_person) %>%
   pivot_wider(
     names_from = srl_subcategory,
-    values_from = n,
+    values_from = avg_count_per_person,
     values_fill = 0
   ) %>%
-  arrange(factor(grade_group, levels = c("A", "B", "C", "D", "F")))
+  arrange(factor(gender, levels = all_genders))
 
-# Set row names and drop grade_group column
-rownames(heatmap_df) <- heatmap_df$grade_group
-heatmap_df$grade_group <- NULL
+desired_col_order <- c(
+  "Planning",
+  "Monitoring",
+  "Evaluation",
+  "First Attempt (per session)",
+  "Revisiting",
+  "Skipping Questions",
+  "Gamification Engagement",
+  "Technical Management"
+)
 
-# Convert to matrix for heatmap
+existing_col_order <- desired_col_order[desired_col_order %in% colnames(heatmap_df)]
+heatmap_df <- heatmap_df[, c("gender", existing_col_order), drop = FALSE]
+
+rownames(heatmap_df) <- heatmap_df$gender
+heatmap_df$gender <- NULL
+
 heatmap_matrix <- as.matrix(heatmap_df)
 
-# Create number_color matrix based on heatmap_matrix values
-number_colors <- ifelse(heatmap_matrix > 3000, "white", "black")
+number_colors <- ifelse(heatmap_matrix > 40, "white", "black")
 
-png("srl_heatmap_histogram_data.png", width = 1400, height = 1000)
+png("gender_srl_heatmap.png", width = 1400, height = 600)
 pheatmap(heatmap_matrix,
-         main = "SRL Subcategory Frequency by Grade Group",
+         main = "Gender SRL Heatmap",
          cluster_rows = FALSE,
          cluster_cols = FALSE,
          display_numbers = TRUE,
-         number_format = "%.0f",
+         number_format = "%.2f",
          fontsize_number = 15,
-         fontsize = 20,            
+         fontsize = 20,
          angle_col = 45,
          number_color = number_colors,
          color = colorRampPalette(c("white", "darkblue"))(100),
-         cellwidth = 100)
+         cellwidth = 60)
 dev.off()
 
-
-cat("Heatmap saved as: srl_heatmap_histogram_data.png\n")
-
-
+cat("Normalized heatmap saved as: gender_srl_heatmap.png\n")
 
 # ----- Final Summary -----
 overall_grade_avg <- df_plot_ready %>%
@@ -370,7 +344,7 @@ final_summary <- paste0(
 
 cat("\n", final_summary, "\n")
 
-# Markov plot without grouping (for all students)
+# Markov plot without grouping (all students)
 df_pruned_all <- read.csv("srl_output_pruned.csv", stringsAsFactors = FALSE)
 df_pruned_all$time_created <- ymd_hms(df_pruned_all$time_created)
 

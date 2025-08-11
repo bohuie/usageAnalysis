@@ -11,10 +11,11 @@ library(pMineR)
 library(DiagrammeR)
 
 # Load the full dataset
-# STEP 1: Compute transitions BEFORE pruning
 df <- read.csv("updated_output.csv", stringsAsFactors = FALSE)
+# df <- read.csv("output_all_students.csv", stringsAsFactors = FALSE)
 df$time_created <- ymd_hms(df$time_created)
 
+# Compute action-to-action transitions
 transitions <- df %>%
   arrange(actor, session_id, time_created) %>%
   group_by(actor, session_id) %>%
@@ -30,76 +31,15 @@ transition_matrix <- as.data.frame(transition_matrix)
 rownames(transition_matrix) <- transition_matrix$action_code
 transition_matrix$action_code <- NULL
 
-# Build actor vectors BEFORE pruning
-actor_vectors_raw <- df %>%
-  group_by(actor, action_code) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  pivot_wider(names_from = action_code, values_from = count, values_fill = 0)
-
-X <- actor_vectors_raw %>% column_to_rownames("actor")
-X <- X[complete.cases(X), ]
-X <- X[!apply(X, 1, function(row) any(is.nan(row) | is.infinite(row))), ]
-X <- X[rowSums(X) > 0, ]
-
-# Perform k-means clustering (same as before)
-set.seed(42)
-k_best <- 3
-km_result <- kmeans(X, centers = k_best, nstart = 25)
-actor_clusters <- tibble(actor = rownames(X), cluster = km_result$cluster)
-
-# Save clusters BEFORE pruning so we can reuse them later
-write.csv(actor_clusters, "actor_clusters_before_filter.csv", row.names = FALSE)
-
-df$actor <- as.character(df$actor)
-actor_clusters$actor <- as.character(actor_clusters$actor)
-
-df_clustered <- df %>%
-  left_join(actor_clusters, by = "actor")
-
-write.csv(df_clustered, "output_clustered_pre_filter.csv", row.names = FALSE)
-
-# STEP 2: Plot Markov per cluster (BEFORE Z-filter)
-df_clustered$time_created <- ymd_hms(df_clustered$time_created)
-grade_columns <- c("lab", "mid_1", "mid_2", "final_exam", "final_score")
-df_clustered[grade_columns] <- lapply(df_clustered[grade_columns], function(x) as.numeric(gsub("%", "", x)))
-
-df_plot_ready <- df_clustered %>%
-  filter(!is.na(cluster), !is.na(action_code)) %>%
-  select(session_id, time_created, action_code, cluster, actor, all_of(grade_columns))
-
-all_clusters <- sort(unique(df_plot_ready$cluster))
-cat("\n=== Markov Model BEFORE z-score filtering ===\n")
-for (target_cluster in all_clusters) {
-  cluster_data <- df_plot_ready %>%
-    filter(cluster == target_cluster) %>%
-    rename(CaseID = session_id, Timestamp = time_created, Event = action_code)
-
-  if (nrow(cluster_data) > 0) {
-    grade_avg <- cluster_data %>%
-      summarise(across(all_of(grade_columns), ~ round(mean(.x, na.rm = TRUE), 2)))
-    num_students <- cluster_data %>% select(actor) %>% distinct() %>% nrow()
-    title_str <- paste0("Cluster ", target_cluster, ": ",
-                        "Lab=", grade_avg$lab, ", MT1=", grade_avg$mid_1,
-                        ", MT2=", grade_avg$mid_2, ", FinalExam=", grade_avg$final_exam,
-                        ", FinalGrade=", grade_avg$final_score, ", N=", num_students)
-    cat("\n====", title_str, "====\n\n")
-
-    objDL <- dataLoader(verbose.mode = FALSE)
-    objDL$load.data.frame(cluster_data,
-                          IDName = "CaseID",
-                          EVENTName = "Event",
-                          dateColumnName = "Timestamp",
-                          format.column.date = "%Y-%m-%d %H:%M:%S")
-    fomm <- firstOrderMarkovModel(verbose.mode = FALSE)
-    fomm$loadDataset(objDL$getData())
-    fomm$trainModel()
-    print(grViz(fomm$plot(giveItBack = TRUE)))
-
-    if (target_cluster != max(all_clusters)) {
-      readline(prompt = "Press [Enter] to continue...")
-    }
-  }
-}
+# Frequency heatmap
+pheatmap(as.matrix(transition_matrix),
+         main = "Transition Frequency Heatmap",
+         fontsize = 10,
+         display_numbers = TRUE,
+         number_format = "%.0f",
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         color = colorRampPalette(c("white", "darkred"))(100))
 
 # Compute z-scores and plot z-score heatmap
 flat_z <- reshape2::melt(as.matrix(transition_matrix))
@@ -126,7 +66,7 @@ pheatmap(as.matrix(z_matrix),
                       length.out = 101))
 
 # Apply z-score filtering
-flat_z$dropped <- ifelse(flat_z$z_score < 1.96, "Dropped", "Kept")
+flat_z$dropped <- ifelse(flat_z$z_score < -0.5, "Dropped", "Kept")
 flat_z$valid <- ifelse(flat_z$dropped == "Dropped", NA, flat_z$count)
 
 # Save dropped transitions to CSV
@@ -178,20 +118,6 @@ df_pruned <- df %>%
   ungroup() %>%
   filter(!drop_flag) %>%
   select(-session_size, -next_action, -prev_action, -transition_pair, -reverse_pair, -drop_flag)
-
-# Load original actor cluster assignments from before z-filtering
-actor_clusters <- read.csv("actor_clusters_before_filter.csv", stringsAsFactors = FALSE)
-
-# Ensure IDs are characters to match
-df_pruned$actor <- as.character(df_pruned$actor)
-actor_clusters$actor <- as.character(actor_clusters$actor)
-
-# Reassign original clusters to pruned dataset
-df_with_clusters <- df_pruned %>%
-  left_join(actor_clusters, by = "actor")
-
-# Save this dataset to use for Markov plotting
-write.csv(df_with_clusters, "output_clustered_pruned_using_original_clusters.csv", row.names = FALSE)
 
 
 
@@ -254,8 +180,7 @@ write.csv(df_with_clusters, "output_clustered_all_students.csv", row.names = FAL
 
 # ----- Markov Model Plot with Grade Averages -----
 # df_clustered <- read.csv("output_clustered.csv", stringsAsFactors = FALSE)
-# Load the z-pruned dataset with original clusters
-df_clustered <- read.csv("output_clustered_pruned_using_original_clusters.csv", stringsAsFactors = FALSE)
+df_clustered <- read.csv("output_clustered_all_students.csv", stringsAsFactors = FALSE)
 df_clustered$time_created <- ymd_hms(df_clustered$time_created)
 
 # Clean and convert grade columns
