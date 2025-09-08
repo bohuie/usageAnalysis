@@ -85,7 +85,7 @@ pheatmap(as.matrix(z_matrix),
                       length.out = 101))
 
 # -------------------- Z-Score Filtering --------------------
-flat_z$dropped <- ifelse(flat_z$z_score < -0.319, "Dropped", "Kept")
+flat_z$dropped <- ifelse(flat_z$z_score < 1.96, "Dropped", "Kept")
 flat_z$valid <- ifelse(flat_z$dropped == "Dropped", NA, flat_z$count)
 
 dropped_transitions <- flat_z %>%

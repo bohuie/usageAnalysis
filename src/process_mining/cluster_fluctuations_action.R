@@ -5,6 +5,7 @@ library(lubridate)
 library(pheatmap)
 library(pMineR)
 library(DiagrammeR)
+library(tibble)
 
 # Load pruned interaction data
 df <- read.csv("output_pruned.csv", stringsAsFactors = FALSE)
@@ -17,10 +18,43 @@ grades <- read.csv("data/grades.csv", stringsAsFactors = FALSE)
 grades <- grades %>%
   mutate(across(c(mid_1, mid_2, final_exam), ~ as.numeric(gsub("[^0-9\\.]", "", .))))
 
+# Load gender data
+gender_df <- read.csv("data/gender.csv", stringsAsFactors = FALSE)
+
+# Load skipped questions data
+skipped_df <- read.csv("data/updated_output_skipped_questions.csv", stringsAsFactors = FALSE)
+
+# Create grade_group based on final_score in df
+df <- df %>%
+  mutate(final_score = as.numeric(final_score)) %>%
+  mutate(
+    grade_group = case_when(
+      final_score > 100.00 ~ "A",
+      final_score >= 80.00 & final_score <= 100.00 ~ "A",
+      final_score >= 70.00 & final_score <= 79.00  ~ "B",
+      final_score >= 60.00 & final_score <= 69.00  ~ "C",
+      final_score >= 50.00 & final_score <= 59.00  ~ "D",
+      final_score < 50.00                          ~ "F",
+      TRUE                                         ~ NA_character_
+    )
+  )
+
+# Prepare grade group and gender data for merging into skipped_df
+grade_groups_df <- df %>%
+  distinct(actor, grade_group)
+
+gender_df <- gender_df %>%
+  select(actor, gender_group = gender)
+
+# Add the grade_group and gender_group columns to skipped_df
+skipped_df <- skipped_df %>%
+  left_join(grade_groups_df, by = "actor") %>%
+  left_join(gender_df, by = "actor")
+
 # Function to determine Up/Down/Stayed
 get_change_label <- function(delta) {
-  if (delta > 5) return("Up")  # or > 5
-  else if (delta < -5) return("Down") # or < -5
+  if (delta > 5) return("Up")
+  else if (delta < -5) return("Down")
   else return("Stayed")
 }
 
@@ -28,6 +62,13 @@ grade_pairs <- list(
   list(from = "mid_1", to = "mid_2", label = "MT1_to_MT2"),
   list(from = "mid_2", to = "final_exam", label = "MT2_to_Final")
 )
+
+# Initialize fluctuation group columns with NA values
+df$fluctuation_group1 <- NA_character_
+df$fluctuation_group2 <- NA_character_
+skipped_df$fluctuation_group1 <- NA_character_
+skipped_df$fluctuation_group2 <- NA_character_
+
 
 for (pair in grade_pairs) {
   from_col <- pair$from
@@ -44,9 +85,75 @@ for (pair in grade_pairs) {
     ) %>%
     select(actor = actor_id, shift_group)
 
-  # Merge shift group with pruned interaction data
+  # Merge shift group with pruned interaction data and gender data
   df_clustered <- df %>%
-    left_join(shift_df, by = "actor")
+    left_join(shift_df, by = "actor") %>%
+    left_join(gender_df, by = "actor")
+
+  # Merge the current shift group into the main dataframes
+  if (label == "MT1_to_MT2") {
+    if ("fluctuation_group1" %in% names(skipped_df)) {
+      skipped_df <- skipped_df %>%
+        left_join(shift_df, by = "actor") %>%
+        mutate(fluctuation_group1 = coalesce(fluctuation_group1, shift_group)) %>%
+        select(-shift_group)
+    } else {
+      skipped_df <- skipped_df %>%
+        left_join(shift_df, by = "actor") %>%
+        rename(fluctuation_group1 = shift_group)
+    }
+
+  } else if (label == "MT2_to_Final") {
+     if ("fluctuation_group2" %in% names(skipped_df)) {
+       skipped_df <- skipped_df %>%
+         left_join(shift_df, by = "actor") %>%
+         mutate(fluctuation_group2 = coalesce(fluctuation_group2, shift_group)) %>%
+         select(-shift_group)
+     } else {
+       skipped_df <- skipped_df %>%
+         left_join(shift_df, by = "actor") %>%
+         rename(fluctuation_group2 = shift_group)
+     }
+  }
+
+  ## --- NEW CODE: GENERATE AND SAVE STACKED BAR GRAPHS ---
+
+  # Prepare combined data for plotting
+  plotting_df <- df_clustered %>%
+    distinct(actor, shift_group, gender_group, grade_group)
+
+  # Plot Grade Group Distribution
+  grade_plot_data <- plotting_df %>%
+    group_by(shift_group, grade_group) %>%
+    summarise(count = n(), .groups = "drop")
+
+  p_grade <- ggplot(grade_plot_data, aes(x = shift_group, y = count, fill = grade_group)) +
+    geom_bar(stat = "identity", position = "stack") + # CHANGE FROM "fill" to "stack"
+    geom_text(aes(label = count), position = position_stack(vjust = 0.5)) +
+    labs(title = paste("Grade Group Distribution by", label, "Shift Group"),
+        x = "Shift Group",
+        y = "Number of Students", # Changed y-axis label
+        fill = "Grade Group") +
+    theme_minimal()
+  ggsave(paste0("grade_distribution_", label, ".png"), plot = p_grade, width = 8, height = 6)
+
+  # Plot Gender Group Distribution
+  gender_plot_data <- plotting_df %>%
+    group_by(shift_group, gender_group) %>%
+    summarise(count = n(), .groups = "drop")
+
+  p_gender <- ggplot(gender_plot_data, aes(x = shift_group, y = count, fill = gender_group)) +
+    geom_bar(stat = "identity", position = "stack") + # CHANGE FROM "fill" to "stack"
+    geom_text(aes(label = count), position = position_stack(vjust = 0.5)) +
+    labs(title = paste("Gender Group Distribution by", label, "Shift Group"),
+        x = "Shift Group",
+        y = "Number of Students", # Changed y-axis label
+        fill = "Gender Group") +
+    theme_minimal()
+  ggsave(paste0("gender_distribution_", label, ".png"), plot = p_gender, width = 8, height = 6)
+
+  ## --- END NEW CODE ---
+
 
   # Cleaned subset for plotting
   df_plot_ready <- df_clustered %>%
@@ -83,20 +190,19 @@ for (pair in grade_pairs) {
     p <- ggplot(shift_data, aes(x = action_code, y = avg_count_per_person)) +
       geom_bar(stat = "identity", fill = "steelblue", color = "black") +
       geom_text(aes(label = sprintf("%.2f", avg_count_per_person)), vjust = -0.3, size = 3) +
-      scale_y_continuous(limits = c(0, 200)) +  # or adjust max as you want
+      scale_y_continuous(limits = c(0, 200)) +
       theme_minimal() +
       theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
       labs(title = paste("Average Action Count per Person -", label, "-", shift),
           x = paste0("Action Code Subcategory (n=", n_students, ")"),
           y = "Average Count per Person")
 
-
     ggsave(paste0("fluc_action_hist", label, "_", shift, ".png"), plot = p, width = 12, height = 6)
   }
 
   ## --- Heatmap ---
 
-  # First, get number of students per shift group
+  # Get number of students per shift group
   n_students_by_group <- df_plot_ready %>%
     distinct(actor, shift_group) %>%
     count(shift_group, name = "n_students")
@@ -110,7 +216,7 @@ for (pair in grade_pairs) {
       fill = list(n = 0)
     )
 
-  # Pivot to wide format (rows = shift groups, columns = action codes, values = counts)
+  # Pivot to wide format
   wide_counts <- raw_counts_df %>%
     pivot_wider(
       names_from = action_code,
@@ -134,52 +240,46 @@ for (pair in grade_pairs) {
   # Identify and remove columns where all values are < 1
   low_percent_cols <- names(heatmap_df)[apply(heatmap_df, 2, function(col) all(col < 1))]
 
-  # Print omitted columns
   if (length(low_percent_cols) > 0) {
     message("Omitting columns with all percentage values < 1%: ", paste(low_percent_cols, collapse = ", "))
   }
 
-  # Filter them out
   heatmap_df <- heatmap_df[, !(names(heatmap_df) %in% low_percent_cols), drop = FALSE]
-
 
   # Reorder rows
   desired_order <- c("Up", "Stayed", "Down")
   heatmap_df <- heatmap_df[desired_order, , drop = FALSE]
 
   # Define desired column order
-desired_col_order <- c(
-  "add_goal_item",
-  "created_goal",
-  "created_goal_item",
-  "selected_category",
-  "selected_practice_from_concept_map",
-  "selected_practice_from_goal",
-  "started_practice_from_goal",
-  "clicked_next_question1",
-  "selected_assignments",
-  "submitted_solution1",
-  "created_report",
-  "submitted_solution2",
-  "submitted_solution3",
-  "clicked_next_question2",
-  "viewed_personal_ranking",
-  "viewed_team_ranking",
-  "created_team",
-  "joined_team",
-  "selected_challenges",
-  "selected_leaderboard",
-  "requested_password_reset",
-  "reset_password",
-  "updated_profile"
-)
+  desired_col_order <- c(
+    "add_goal_item",
+    "create_goal",
+    "create_goal_item",
+    "select_category",
+    "select_practice_from_concept_map",
+    "select_practice_from_goal",
+    "start_practice_from_goal",
+    "click_next_question",
+    "select_assignments",
+    "submit_until_correct",
+    "create_report",
+    "submit_first_in_session",
+    "submit_after_correct",
+    "skip_to_next_question",
+    "view_personal_ranking",
+    "view_team_ranking",
+    "create_team",
+    "join_team",
+    "select_challenges",
+    "select_leaderboard",
+    "request_password_reset",
+    "reset_password",
+    "update_profile"
+  )
 
-# Keep only those columns present in the current data
-existing_col_order <- desired_col_order[desired_col_order %in% colnames(heatmap_df)]
+  existing_col_order <- desired_col_order[desired_col_order %in% colnames(heatmap_df)]
 
-# Reorder columns
-heatmap_df <- heatmap_df[, existing_col_order, drop = FALSE]
-
+  heatmap_df <- heatmap_df[, existing_col_order, drop = FALSE]
 
   # --- Heatmap ---
   png(paste0("fluc_action_heatmap", label, ".png"), width = 1400, height = 350)
@@ -194,7 +294,6 @@ heatmap_df <- heatmap_df[, existing_col_order, drop = FALSE]
           angle_col = 45,
           cellwidth = 60)
   dev.off()
-
 
   ## --- Markov Plot per Shift Group ---
   for (shift in all_shifts) {
@@ -231,3 +330,5 @@ heatmap_df <- heatmap_df[, existing_col_order, drop = FALSE]
   }
 
 }
+
+write.csv(skipped_df, "skipped_questions_with_groups.csv", row.names = FALSE)

@@ -79,7 +79,7 @@ pheatmap(as.matrix(z_matrix),
                       length.out = 101))
 
 # Apply z-score filtering
-flat_z$dropped <- ifelse(flat_z$z_score < -0.319, "Dropped", "Kept")
+flat_z$dropped <- ifelse(flat_z$z_score < 1.65, "Dropped", "Kept")
 flat_z$valid <- ifelse(flat_z$dropped == "Dropped", NA, flat_z$count)
 
 # Save dropped transitions to CSV
@@ -257,29 +257,33 @@ for (grade in all_grade_groups) {
     select(actor) %>%
     distinct() %>%
     nrow()
-
-  # Normalize counts by number of students
+  
+  num_sessions_in_grade <- df_plot_ready %>%
+    filter(grade_group == grade) %>%
+    select(session_id) %>%
+    distinct() %>%
+    nrow()
+  
+  # Normalize counts by (number of students * number of sessions)
   grade_data <- grade_data %>%
-    mutate(avg_count_per_person = n / num_students_in_grade)
-
-  # Make action_code a factor for consistent order
+    mutate(avg_count_normalized = n / (num_students_in_grade * num_sessions_in_grade))
+  
   grade_data$action_code <- factor(grade_data$action_code, levels = all_subcategories)
   
-  # Plot normalized histogram
-  p <- ggplot(grade_data, aes(x = action_code, y = avg_count_per_person)) +
+  p <- ggplot(grade_data, aes(x = action_code, y = avg_count_normalized)) +
     geom_bar(stat = "identity", fill = "skyblue", color = "black") +
-    geom_text(aes(label = sprintf("%.2f", avg_count_per_person)), vjust = -0.3, size = 3) +
-    scale_y_continuous(limits = c(0, max_y_limit), expand = expansion(mult = c(0, 0.05))) +
+    geom_text(aes(label = sprintf("%.4f", avg_count_normalized)), vjust = -0.3, size = 3) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(
-      title = paste("Action Code Count per Person - Grade Group", grade),
-      x = paste0("Action Code (n = ", num_students_in_grade, ")"),
-      y = "Average Count per Person"
+      title = paste("Normalized Action Frequency - Grade Group", grade),
+      x = paste0("Action Code (n = ", num_students_in_grade, " students, ",
+                 num_sessions_in_grade, " sessions)"),
+      y = "Frequency / (People × Sessions)"
     )
   
-  # Save plot to PNG
-  filename <- paste0("grade_action_hist_", grade, ".png")
+  filename <- paste0("grade_action_hist_", grade, "_normalized.png")
   ggsave(filename, plot = p, width = 12, height = 6)
   cat("Saved normalized histogram to:", filename, "\n")
 }

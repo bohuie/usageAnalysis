@@ -55,15 +55,51 @@ All scripts with their description and requirements.
 
 ## Order of scripts to run (description of scripts and required input files can be found below)
 
+To get student performance metrics and activity bar chart:
 1. filter_consent.py
 2. filter_submissions.py
 3. track_attempts.py
 4. engagement.py
 5. filter_gradebook.py
 6. grade_behavior.py
-7. time_gap.py
-8. state_diagram.py
+7. bar_chart.py
 
+To get index of difficulty for all questions in Course Gamification throughout 2022-2025:
+1. filter_consent.py
+2. filter_all_submissions.py 
+3. splitCSV.py 
+4. filter_submissions.py
+5. combineCSV.py 
+6. track_attempts.py
+7. engagement.py 
+8. Create pivot table on Microsoft Excel
+9. get_skipped_ID.py 
+10. count_skipped.py
+
+To get heatmaps and process maps of cluster groups:
+1. rename_actor.py
+2. process_mining.R
+3. cluster_behavior_action.R
+4. cluster_behavior_srl.R
+5. cluster_fluctuations_action.R
+6. cluster_fluctuations_srl.R
+7. cluster_grade_action.R
+8. cluster_grade_srl.R
+9. cluster_gender_action.R
+10. cluster_gender_srl.R
+
+## Scripts to ignore
+
+old_scripts:
+- attempt_statistics.py
+- filter_optional_submissions.py 
+- gradebook_engagement_statistics.py 
+- question_category_count.py 
+- question_variation_count.py 
+- statistics.py
+- user_performance.py
+- time_gap.py
+- state_diagram.py
 
 ## get_questions.py
 
@@ -203,3 +239,131 @@ Produces state diagram graph visualization of student's behavior/ activities on 
 ### Requirement:
 - pip install networkx
 - actor markov matrix csv
+
+## filter_all_submissions.py
+
+### Description
+Filters out unnecessary rows for files that are beyond one year in duration
+
+### Requirement:
+- filtered consent csv file
+
+## splitCSV.py
+
+### Description
+Splits large csv file into modifiable smaller parts
+
+### Requirement:
+- large actions.csv
+
+## combineCSV.py 
+
+### Description
+Combines previously split csv into one csv
+
+### Requirement:
+- Separate parts of the csv (code modifiable based on the number of parts)
+
+## get_skipped_ID.py
+
+### Description
+Returns csv with rows of skipped questions and their estimated index of difficulty
+
+### Requirement:
+- updated_output.csv
+- actions_22_25.csv
+- categories_with_difficulty.csv
+
+## rename_actor.py
+
+### Description
+Renames user id who did course more than once as its own actor id (e.g. 388 becomes 3881 and 3882 for January and May sessions)
+
+### Requirement:
+- input.csv
+
+## process_mining.R
+
+### Description
+Prepares raw data for process mapping
+
+### Requirement:
+- new_input.csv
+- filter.csv
+- grades.csv
+
+## cluster_behavior_action.R
+
+### Description
+Clusters student data into groups based on commonly shared actions, with action_code as the nodes/ events
+
+### Requirement:
+- updated_output.csv
+
+## cluster_behavior_srl.R
+
+### Description
+Clusters student data into groups based on commonly shared actions, with srl_subcategory as the nodes/ events
+
+### Requirement:
+- updated_output.csv
+
+## cluster_fluctuations_action.R
+
+### Description
+- Clusters student data into groups based on fluctuation shift groups (Midterm 1 to Midterm 2 and Midterm 2 to Finals), with action_code as the nodes/ events. 
+- Generates heatmaps for average frequency of each action_code by shift group. 
+- Adds group information to skipped questions data
+
+### Requirement:
+- output_pruned.csv
+- grades.csv
+- gender.csv
+- updated_output_skipped_questions.csv
+
+## cluster_fluctuations_srl.R
+
+### Description
+- Clusters student data into groups based on fluctuation shift groups (Midterm 1 to Midterm 2 and Midterm 2 to Finals), with srl_subcategory as the nodes/ events. 
+- Generates heatmaps for average frequency of each srl_subcategory by shift group. 
+
+### Requirement:
+- output_pruned.csv
+- grades.csv
+
+## cluster_grade_action.R
+
+### Description
+- Clusters student data into groups based on end of course grade level, with action_code as the nodes/ events. 
+- Generates heatmaps for average frequency of each action_code by grade group. 
+
+### Requirement:
+- updated_output.csv
+
+## cluster_grade_srl.R
+
+### Description
+- Clusters student data into groups based on end of course grade level, with srl_subcategory as the nodes/ events. 
+- Generates heatmaps for average frequency of each srl_subcategory by grade group. 
+
+### Requirement:
+- updated_output.csv
+
+## cluster_gender_action.R
+
+### Description
+- Clusters student data into groups based on gender, with action_code as the nodes/ events. 
+- Generates heatmaps for average frequency of each action_code by gender group.
+
+### Requirement:
+- updated_output.csv
+
+## cluster_gender_srl.R
+
+### Description
+- Clusters student data into groups based on gender, with srl_subcategory as the nodes/ events. 
+- Generates heatmaps for average frequency of each srl_subcategory by gender group.
+
+### Requirement:
+- updated_output.csv
+
