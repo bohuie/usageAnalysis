@@ -14,7 +14,7 @@ library(pMineR)
 library(DiagrammeR)
 
 # Load the full dataset
-df <- read.csv("data/output.csv", stringsAsFactors = FALSE)
+df <- read.csv("updated_output.csv", stringsAsFactors = FALSE)
 df$time_created <- ymd_hms(df$time_created)
 df <- df %>% filter(!is.na(srl_subcategory), srl_subcategory != "")
 df$srl_subcategory[df$srl_subcategory == "Begin"] <- "Logged In"
@@ -82,7 +82,7 @@ pheatmap(as.matrix(z_matrix),
                       length.out = 101))
 
 # Apply z-score filtering
-flat_z$dropped <- ifelse(flat_z$z_score < -0.319, "Dropped", "Kept")
+flat_z$dropped <- ifelse(flat_z$z_score < 1.65, "Dropped", "Kept")
 flat_z$valid <- ifelse(flat_z$dropped == "Dropped", NA, flat_z$count)
 
 # Save dropped transitions to CSV
@@ -247,105 +247,123 @@ for (target_grade in all_grade_groups) {
   }
 }
 
-# --- Histogram of srl_subcategory per grade group ---
+# --- Histogram of srl_subcategory per grade group (normalized: average count per person) ---
+
 # Before the loop, get all unique srl_subcategory values (ordered)
 all_subcategories <- sort(unique(df_plot_ready$srl_subcategory))
 
-# Calculate max count across all grades for y-axis scaling
-max_count <- 0
-for (grade in all_grade_groups) {
-  freq_tbl <- df_plot_ready %>%
-    filter(grade_group == grade) %>%
-    count(srl_subcategory) %>%
-    complete(srl_subcategory = all_subcategories, fill = list(n = 0))
-  
-  max_count <- max(max_count, max(freq_tbl$n))
-}
+# Set a reasonable max y limit for avg counts per person (e.g., 200)
+max_y_limit <- 200
 
-# Loop through each grade group
 for (grade in all_grade_groups) {
   grade_data <- df_plot_ready %>%
     filter(grade_group == grade) %>%
     count(srl_subcategory) %>%
     complete(srl_subcategory = all_subcategories, fill = list(n = 0))
-
+  
   num_students_in_grade <- df_plot_ready %>%
     filter(grade_group == grade) %>%
     select(actor) %>%
     distinct() %>%
     nrow()
-  
-  # Make srl_subcategory a factor with fixed levels for consistent ordering
+
+  # Normalize counts by number of students
+  grade_data <- grade_data %>%
+    mutate(avg_count_per_person = n / num_students_in_grade)
+
+  # Make srl a factor for consistent order
   grade_data$srl_subcategory <- factor(grade_data$srl_subcategory, levels = all_subcategories)
   
-  # Plot histogram with counts on top of bars and fixed y axis
-  p <- ggplot(grade_data, aes(x = srl_subcategory, y = n)) +
+  # Plot normalized histogram
+  p <- ggplot(grade_data, aes(x = srl_subcategory, y = avg_count_per_person)) +
     geom_bar(stat = "identity", fill = "skyblue", color = "black") +
-    geom_text(aes(label = n), vjust = -0.3, size = 3) +
-    scale_y_continuous(limits = c(0, max_count * 1.1), expand = expansion(mult = c(0, 0.05))) +
+    geom_text(aes(label = sprintf("%.2f", avg_count_per_person)), vjust = -0.3, size = 3) +
+    scale_y_continuous(limits = c(0, max_y_limit), expand = expansion(mult = c(0, 0.05))) +
     theme_minimal() +
-    theme(
-      panel.background = element_rect(fill = "white", color = NA),
-      plot.background = element_rect(fill = "white", color = NA),
-      axis.text.x = element_text(angle = 45, hjust = 1)
-    ) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     labs(
-      title = paste("SRL Subcategory Frequency - Grade Group", grade),
+      title = paste("Average SRL Count per Person - Grade Group", grade),
       x = paste0("SRL Subcategory (n = ", num_students_in_grade, ")"),
-      y = "Count"
+      y = "Average Count per Person"
     )
   
   # Save plot to PNG
-  filename <- paste0("srl_histogram_grade_", grade, ".png")
+  filename <- paste0("grade_srl_hist_", grade, ".png")
   ggsave(filename, plot = p, width = 12, height = 6)
-  cat("Saved histogram to:", filename, "\n")
+  cat("Saved normalized histogram to:", filename, "\n")
 }
 
 
-# --- Heatmap: SRL Subcategory Frequency by Grade Group ---
+# --- Heatmap: Normalized SRL Subcategory Frequency by Grade Group ---
 
-# Build frequency matrix: grade_group × srl_subcategory
+# Build normalized frequency matrix: grade_group × srl
 heatmap_df <- df_plot_ready %>%
   count(grade_group, srl_subcategory) %>%
   complete(
     grade_group = all_grade_groups,
     srl_subcategory = all_subcategories,
     fill = list(n = 0)
-  ) %>%
+  )
+
+# Get number of students per grade_group
+n_students_by_grade <- df_plot_ready %>%
+  distinct(actor, grade_group) %>%
+  count(grade_group, name = "n_students")
+
+# Join student counts and normalize counts by number of students
+heatmap_df <- heatmap_df %>%
+  left_join(n_students_by_grade, by = "grade_group") %>%
+  mutate(avg_count_per_person = n / n_students) %>%
+  select(grade_group, srl_subcategory, avg_count_per_person) %>%
   pivot_wider(
     names_from = srl_subcategory,
-    values_from = n,
+    values_from = avg_count_per_person,
     values_fill = 0
   ) %>%
   arrange(factor(grade_group, levels = c("A", "B", "C", "D", "F")))
 
-# Set row names and drop grade_group column
+# Reorder columns by desired SRL subcategory order
+desired_col_order <- c(
+  "Planning",
+  "Monitoring",
+  "Evaluation",
+  "First Attempt (per session)",
+  "Revisiting",
+  "Skipping Questions",
+  "Gamification Engagement",
+  "Technical Management"
+)
+
+# Keep only columns that are present
+existing_col_order <- desired_col_order[desired_col_order %in% colnames(heatmap_df)]
+heatmap_df <- heatmap_df[, c("grade_group", existing_col_order), drop = FALSE]
+
+# Prepare matrix for heatmap
 rownames(heatmap_df) <- heatmap_df$grade_group
 heatmap_df$grade_group <- NULL
 
-# Convert to matrix for heatmap
 heatmap_matrix <- as.matrix(heatmap_df)
 
-# Create number_color matrix based on heatmap_matrix values
-number_colors <- ifelse(heatmap_matrix > 3000, "white", "black")
+# Colors for numbers: white text for large values, black otherwise
+number_colors <- ifelse(heatmap_matrix > 80, "white", "black")
 
-png("srl_heatmap_histogram_data.png", width = 1400, height = 1000)
+# Save the heatmap
+png("grade_srl_heatmap.png", width = 1400, height = 600)
 pheatmap(heatmap_matrix,
-         main = "SRL Subcategory Frequency by Grade Group",
+         main = "Grade SRL Heatmap",
          cluster_rows = FALSE,
          cluster_cols = FALSE,
          display_numbers = TRUE,
-         number_format = "%.0f",
+         number_format = "%.2f",
          fontsize_number = 15,
-         fontsize = 20,            
+         fontsize = 20,
          angle_col = 45,
          number_color = number_colors,
          color = colorRampPalette(c("white", "darkblue"))(100),
-         cellwidth = 100)
+         cellwidth = 60)
 dev.off()
 
-
-cat("Heatmap saved as: srl_heatmap_histogram_data.png\n")
+cat("Normalized heatmap saved as: grade_srl_heatmap.png\n")
 
 
 

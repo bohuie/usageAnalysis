@@ -11,7 +11,7 @@ library(pMineR)
 library(DiagrammeR)
 
 # Load the full dataset
-df <- read.csv("data/output.csv", stringsAsFactors = FALSE)
+df <- read.csv("updated_output.csv", stringsAsFactors = FALSE)
 # df <- read.csv("output_all_students.csv", stringsAsFactors = FALSE)
 df$time_created <- ymd_hms(df$time_created)
 
@@ -28,6 +28,7 @@ transition_matrix <- transitions %>%
   pivot_wider(names_from = next_action, values_from = n, values_fill = 0)
 
 transition_matrix <- as.data.frame(transition_matrix)
+
 rownames(transition_matrix) <- transition_matrix$srl_subcategory
 transition_matrix$srl_subcategory <- NULL
 
@@ -66,7 +67,7 @@ pheatmap(as.matrix(z_matrix),
                       length.out = 101))
 
 # Apply z-score filtering
-flat_z$dropped <- ifelse(flat_z$z_score < -0.5, "Dropped", "Kept")
+flat_z$dropped <- ifelse(flat_z$z_score < 1.65, "Dropped", "Kept")
 flat_z$valid <- ifelse(flat_z$dropped == "Dropped", NA, flat_z$count)
 
 # Save dropped transitions to CSV

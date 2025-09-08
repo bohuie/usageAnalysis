@@ -1,3 +1,5 @@
+# script is called by filter_submissions.py
+
 import csv
 import sys
 from pathlib import Path
